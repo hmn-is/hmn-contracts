@@ -1,10 +1,10 @@
 # HMN Contracts
 
-This repository contains the HMN token and on-chain registry system for unique human wallets. The registry builds on Worldcoin Foundation's World ID system for anonymous verification of unique humanness.
+This repository contains the HMN token and on-chain registry system for unique human wallets. The registry builds on [Worldcoin Foundation](https://foundation.world.org/)'s [World ID system](https://world.org/world-id) for anonymous verification of unique humanness.
 
-HMN is the first stage in a set of experiment towards creating a new financial system where a) each participant has exactly one (set of verified and linked) account(s), b) each participating account is verified and trusted, and c) that covers all real world assets ands resources, including ones that are currently considered externalities.
+HMN is the first stage in a set of experiment towards creating a new financial system where a) each participant has exactly one (set of verified and linked) account(s), b) each participating account is verified and trusted, and eventually c) the system covers all real world assets ands resources, including ones that are currently considered externalities.
 
-While creating a Mutually Exclusive and Commonly Exhaustive capital system is impossibly hard, we have a plan on how to get there, and believe that even a one percent change is well worth the effort. If successful, a MECE financial system would have the potential of solving most of humanity's most pressing and most difficult problems such as global warming, loss of biodiversity, pollution, tax evasion, unemployment (via universal income), and disproportionate accumulation of wealth.
+While creating a Mutually Exclusive and Commonly Exhaustive capital system is impossibly hard, we have a plan on how to get there and believe that even a one percent change is well worth the effort. A well governed and trustless MECE financial system would have the potential of solving most of humanity's most pressing and most difficult problems such as global warming, loss of biodiversity, pollution, tax evasion, unemployment (via universal income), and disproportionate accumulation of wealth.
 
 For more information on the project, see [hmn.is](https://hmn.is).
 
@@ -12,7 +12,7 @@ For more information on the project, see [hmn.is](https://hmn.is).
 
 ### HMN Token
 
-Non-upgradeable HMN token contracts consist of `HmnBase` base contract with transfer control, `HmnMain` master token for ETH Mainnet and `HmnSlave` token for L2s. The token contracts serve as a trustless and safe currency with minimal attack surface, while also providing novel features like account recovery and transfer tax and control for discouraging fake accounts and non-human users.
+Non-upgradeable HMN token contracts consist of `HmnBase` base contract with transfer control, `HmnMain` master token for ETH Mainnet and `HmnSlave` token for L2s. The token contracts serve as a trustless currency with minimal attack surface, while also providing novel features like account recovery and unverified-transfer tax for discouraging fake accounts and non-human users.
 
 ### HMN Manager and Bridges
 
