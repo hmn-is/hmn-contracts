@@ -2,6 +2,7 @@
 pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {HmnBase} from "./HmnBase.sol";
 import {IHmnManagerMain} from './interfaces/IHmnManagerMain.sol';
 import {IHmnManagerBase} from './interfaces/IHmnManagerBase.sol';
@@ -11,7 +12,7 @@ import {ICustomArbitrumToken, IL1CustomGateway, IL2GatewayRouter} from './interf
 /// @notice Implementation of the main HMN token on Ethereum L1, with support for
 ///         account recovery and Arbitrum L2 bridging
 /// @dev Extends HmnBase which implements human-verification transfer controls
-contract HmnMain is HmnBase, ICustomArbitrumToken {
+contract HmnMain is HmnBase, ReentrancyGuard, ICustomArbitrumToken {
 
     /// @notice Thrown when attempting recovery on an account that has disabled it
     error RecoveryDisabled();
@@ -39,7 +40,7 @@ contract HmnMain is HmnBase, ICustomArbitrumToken {
     /// @param _hmnTransferControl Address of the transfer control registry
     /// @param _arbitrumGatewayAddress Address of Arbitrum's custom gateway
     /// @param _arbitrumRouterAddress Address of Arbitrum's L2 gateway router
-    constructor(IHmnManagerMain _hmnTransferControl, IL1CustomGateway _arbitrumGatewayAddress, IL2GatewayRouter _arbitrumRouterAddress) HmnBase(_hmnTransferControl) {
+    constructor(IHmnManagerMain _hmnTransferControl, IL1CustomGateway _arbitrumGatewayAddress, IL2GatewayRouter _arbitrumRouterAddress) HmnBase(_hmnTransferControl) ReentrancyGuard() {
         arbitrumGatewayAddress = _arbitrumGatewayAddress;
         arbitrumRouterAddress = _arbitrumRouterAddress;
         _mint(_msgSender(), 8200000000 * 10**decimals());
@@ -55,7 +56,7 @@ contract HmnMain is HmnBase, ICustomArbitrumToken {
     ///        Either address or human hash is required for enabling recovery.
     /// @param recoveryTimeout Duration after which recovery can be initiated, or zero to disable recovery
     /// @dev Set all parameters to 0 / address(0) to disable recovery
-    function configureRecovery(address authorizedRecovererAddress, uint256 authorizedRecovererHumanHash, uint256 recoveryTimeout) external virtual {
+    function configureRecovery(address authorizedRecovererAddress, uint256 authorizedRecovererHumanHash, uint256 recoveryTimeout) external virtual nonReentrant {
         bool enableRecovery = (recoveryTimeout != 0 && (authorizedRecovererAddress != address(0) || authorizedRecovererHumanHash != 0));
         addressRecoveryEnabled[_msgSender()] = enableRecovery;
 
@@ -77,7 +78,7 @@ contract HmnMain is HmnBase, ICustomArbitrumToken {
     /// @param root WorldID Merkle root, or zero if not provided
     /// @param nullifierHash Hash proving one-time verification, or zero if not provided
     /// @param proof ZK proof of WorldID verification, or zero if not provided
-    function recover(address addressToRecover, uint256 root, uint256 nullifierHash, uint256[8] calldata proof) external virtual {
+    function recover(address addressToRecover, uint256 root, uint256 nullifierHash, uint256[8] calldata proof) external virtual nonReentrant {
         if (!addressRecoveryEnabled[addressToRecover]) revert RecoveryDisabled();
         _getManager().recover(_msgSender(), addressToRecover, root, nullifierHash, proof);
         _approve(addressToRecover, _msgSender(), balanceOf(addressToRecover));
