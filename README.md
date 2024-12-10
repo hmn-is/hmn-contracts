@@ -37,5 +37,5 @@ forge script script/Deploy.s.sol --rpc-url http://0.0.0.0:8545 --private-key <yo
 ### Generate ABI files
 
 ```shell
-pushd src; forge inspect HmnMangerImplMainV1 abi > abi/manager.json; popd
+pushd src; forge inspect HmnManagerImplMainV1 abi > abi/manager.json; popd
 ```

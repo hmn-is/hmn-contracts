@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import {HmnMangerImplBase} from "./HmnMangerImplBase.sol";
+import {HmnManagerImplBase} from "./HmnManagerImplBase.sol";
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
@@ -19,7 +19,7 @@ import './utils/LibsAndTypes.sol';
 /// - Functions must use onlyProxy and onlyInitialized modifiers
 /// - Carefully control access using onlyOwner or more granular mechanisms
 /// - Only use constant contract-level variables
-contract HmnMangerImplMainV1 is HmnMangerImplBase, EIP712Upgradeable, IHmnManagerMain { // Change to EIP712Upgradeable
+contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnManagerMain { // Change to EIP712Upgradeable
     using ByteHasher for bytes;
     using MultiChainAddress for address;
     using MultiChainAddress for Address32;
@@ -260,7 +260,7 @@ contract HmnMangerImplMainV1 is HmnMangerImplBase, EIP712Upgradeable, IHmnManage
     ///////////////////////////////////////////////////////////////////////////////
 
 
-    constructor() HmnMangerImplBase() EIP712Upgradeable() {
+    constructor() HmnManagerImplBase() EIP712Upgradeable() {
       // empty constructor
     }
 
@@ -431,7 +431,7 @@ contract HmnMangerImplMainV1 is HmnMangerImplBase, EIP712Upgradeable, IHmnManage
     ///                    MAINNET MASTER REGISTRY MANAGEMENT                   ///
     ///////////////////////////////////////////////////////////////////////////////
 
-    function setTimeout(uint256 _verificationLevel, uint256 _timeout) public virtual override (HmnMangerImplBase) onlyOwner onlyProxy onlyInitialized {
+    function setTimeout(uint256 _verificationLevel, uint256 _timeout) public virtual override (HmnManagerImplBase) onlyOwner onlyProxy onlyInitialized {
         super.setTimeout(_verificationLevel, _timeout);
         _announceSetTimeout(_verificationLevel, _timeout);
     }
@@ -745,11 +745,11 @@ contract HmnMangerImplMainV1 is HmnMangerImplBase, EIP712Upgradeable, IHmnManage
         return false;
     }
 
-    /// @inheritdoc HmnMangerImplBase
+    /// @inheritdoc HmnManagerImplBase
     /// @dev For convenience, cancel recovery request for tx.origin, since it has to be in possession of its private keys to send this transaction
     /// @dev Note that this automatic cancellation does not trigger for contract wallets interacted with via meta-transactions.
     ///      For contract wallets, recovery must be denied manually, or through verification.
-    function checkTrust(address from, address to) public virtual override (HmnMangerImplBase, IHmnManagerBase) onlyProxy onlyInitialized returns (uint256) {
+    function checkTrust(address from, address to) public virtual override (HmnManagerImplBase, IHmnManagerBase) onlyProxy onlyInitialized returns (uint256) {
         if (_msgSender() == HMN) _denyRecoveryRequest(tx.origin);
         return super.checkTrust(from, to);
     }

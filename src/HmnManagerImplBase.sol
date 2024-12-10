@@ -12,7 +12,7 @@ import './utils/LibsAndTypes.sol';
 /// @notice Manages human verification and transfer controls for the HMN token across chains
 /// @dev Base implementation for L1/L2 specific contracts. Must be used behind an upgradeable proxy.
 ///      All storage variables are defined here to prevent storage collisions during upgrades.
-abstract contract HmnMangerImplBase is OwnerUpgradeableImplWithDelay, IHmnManagerBase {
+abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManagerBase {
     using MultiChainAddress for address;
     using MultiChainAddress for Address32;
 

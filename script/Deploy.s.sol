@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import "forge-std/Script.sol";
 import "../src/HmnManager.sol";
-import "../src/HmnMangerImplMainV1.sol";
+import "../src/HmnManagerImplMainV1.sol";
 import "../src/HmnMain.sol";
 import "../src/interfaces/IWorldID.sol";
 
@@ -44,7 +44,7 @@ contract Deploy is Script {
             REQUIRED_VERIFICATION_LEVEL_FOR_TRANSFER
         );
 
-        HmnMangerImplMainV1 impl = new HmnMangerImplMainV1();
+        HmnManagerImplMainV1 impl = new HmnManagerImplMainV1();
 
         // Deploy proxy with implementation and initialization
         HmnManager manager = new HmnManager(address(impl), initializeCall);
@@ -59,8 +59,8 @@ contract Deploy is Script {
         );
 
         console.log("HMN Token:", address(hmn));
-        HmnMangerImplMainV1(address(manager)).setHmnAddress(address(hmn));
-        HmnMangerImplMainV1(address(manager)).setUntrustFee(101);
+        HmnManagerImplMainV1(address(manager)).setHmnAddress(address(hmn));
+        HmnManagerImplMainV1(address(manager)).setUntrustFee(101);
 
         vm.stopBroadcast();
 

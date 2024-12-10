@@ -11,7 +11,7 @@ echo "$OUTPUT"
 NEXT_PUBLIC_CONTRACT_ADDRESS=$(echo "$OUTPUT" | grep "Manager Proxy:" | awk '{print $3}')
 
 pushd src;
-forge inspect HmnMangerImplMainV1 abi > abi/manager.json;
+forge inspect HmnManagerImplMainV1 abi > abi/manager.json;
 cp abi/manager.json ../../hmn-is/src/abi/manager.json;
 popd;
 

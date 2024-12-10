@@ -27,7 +27,7 @@ struct Verification {
 type TransferProtectionMode is uint256;
 
 /// @dev Transfer protection modes that determine how strictly transfers are controlled
-/// @dev See HmnMangerImplBase.checkTrust for detailed logic.
+/// @dev See HmnManagerImplBase.checkTrust for detailed logic.
 library TransferProtectionModes {
     uint256 constant ALLOW_ALL = 0;            // Disables all restrictions
     uint256 constant BLOCK_BOTS_ONLY = 1;      // Only block blacklisted bots

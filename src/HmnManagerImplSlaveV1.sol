@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import {HmnMangerImplBase} from "./HmnMangerImplBase.sol";
+import {HmnManagerImplBase} from "./HmnManagerImplBase.sol";
 
 import {IHmnSlave} from "./interfaces/IHmnSlave.sol";
 import {IHmnManagerBridge} from "./interfaces/IHmnManagerBridge.sol";
@@ -13,7 +13,7 @@ import './utils/LibsAndTypes.sol';
 /// @notice A router component that can dispatch group numbers to the correct identity manager
 ///         implementation.
 /// @dev This is the implementation delegated to by a proxy.
-contract HmnMangerImplSlaveV1 is HmnMangerImplBase, IHmnManagerBridge {
+contract HmnManagerImplSlaveV1 is HmnManagerImplBase, IHmnManagerBridge {
     using MultiChainAddress for address;
     using MultiChainAddress for Address32;
 
@@ -109,27 +109,27 @@ contract HmnMangerImplSlaveV1 is HmnMangerImplBase, IHmnManagerBridge {
     ///                 CHAIN CENTRALIZED REGISTRY MANAGEMENT                   ///
     ///////////////////////////////////////////////////////////////////////////////
 
-    function setRequiredVerificationLevelForTransfer(uint256 newLevel) public virtual override (HmnMangerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
+    function setRequiredVerificationLevelForTransfer(uint256 newLevel) public virtual override (HmnManagerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
         super.setRequiredVerificationLevelForTransfer(newLevel);
     }
 
-    function setUntrustFee(uint256 newFee) public virtual override (HmnMangerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
+    function setUntrustFee(uint256 newFee) public virtual override (HmnManagerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
         super.setUntrustFee(newFee);
     }
     
-    function setTimeout(uint256 _verificationLevel, uint256 _timeout) public virtual override (HmnMangerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
+    function setTimeout(uint256 _verificationLevel, uint256 _timeout) public virtual override (HmnManagerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
         super.setTimeout(_verificationLevel, _timeout);
     }
 
-    function setBot(BlockChainId chainId, Address32 account, uint256 blacklistedUntil) public virtual override (HmnMangerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
+    function setBot(BlockChainId chainId, Address32 account, uint256 blacklistedUntil) public virtual override (HmnManagerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
       super.setBot(chainId, account, blacklistedUntil);
     }
 
-    function setPioneer(BlockChainId chainId, Address32 account, bool flag) public virtual override (HmnMangerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
+    function setPioneer(BlockChainId chainId, Address32 account, bool flag) public virtual override (HmnManagerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
       super.setPioneer(chainId, account, flag);
     }
 
-    function undoPioneering(BlockChainId chainId, Address32 approver32) public virtual override (HmnMangerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
+    function undoPioneering(BlockChainId chainId, Address32 approver32) public virtual override (HmnManagerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
       super.undoPioneering(chainId, approver32);
     }
 
