@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "./utils/Ownable2Step.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {HmnBase} from "./HmnBase.sol";
 import {IHmnManagerMain} from './interfaces/IHmnManagerMain.sol';
@@ -12,7 +11,7 @@ import {ICustomArbitrumToken, IL1CustomGateway, IL2GatewayRouter} from './interf
 /// @notice Implementation of the main HMN token on Ethereum L1, with support for
 ///         account recovery and Arbitrum L2 bridging
 /// @dev Extends HmnBase which implements human-verification transfer controls
-contract HmnMain is HmnBase, ICustomArbitrumToken, Ownable2Step {
+contract HmnMain is HmnBase, ICustomArbitrumToken {
 
     /// @notice Thrown when attempting recovery on an account that has disabled it
     error RecoveryDisabled();
@@ -40,7 +39,7 @@ contract HmnMain is HmnBase, ICustomArbitrumToken, Ownable2Step {
     /// @param _hmnTransferControl Address of the transfer control registry
     /// @param _arbitrumGatewayAddress Address of Arbitrum's custom gateway
     /// @param _arbitrumRouterAddress Address of Arbitrum's L2 gateway router
-    constructor(IHmnManagerMain _hmnTransferControl, IL1CustomGateway _arbitrumGatewayAddress, IL2GatewayRouter _arbitrumRouterAddress) HmnBase(_hmnTransferControl) Ownable2Step(_msgSender()) {
+    constructor(IHmnManagerMain _hmnTransferControl, IL1CustomGateway _arbitrumGatewayAddress, IL2GatewayRouter _arbitrumRouterAddress) HmnBase(_hmnTransferControl) {
         arbitrumGatewayAddress = _arbitrumGatewayAddress;
         arbitrumRouterAddress = _arbitrumRouterAddress;
         _mint(_msgSender(), 8200000000 * 10**decimals());

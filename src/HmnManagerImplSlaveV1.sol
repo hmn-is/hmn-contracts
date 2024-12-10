@@ -95,7 +95,6 @@ contract HmnManagerImplSlaveV1 is HmnManagerImplBase, IHmnManagerBridge {
 
         // Start of custom initilization logic for this contract and version
         BLOCKCHAIN_ID = _chainId;
-        permanentWhitelist[address(0)] = true; // allow burns
         requiredVerificationLevelForTransfer = _requiredVerificationLevelForTransfer;
         setTransferProtectionMode(_transferProtectionMode);
         admin = _admin;

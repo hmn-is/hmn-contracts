@@ -302,7 +302,6 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
         
         // Start of custom initilization logic for this contract and version
         BLOCKCHAIN_ID = BlockChainIds.ETHEREUM;
-        permanentWhitelist[address(0)] = true; // allow burns
         if (0 != _orbTimeout && _orbTimeout < MIN_TIMEOUT) revert InvalidOrbTimeout(_orbTimeout);
         if (0 != _deviceTimeout && _deviceTimeout < MIN_TIMEOUT) revert InvalidDeviceTimeout(_deviceTimeout);
         timeouts[VerificationLevels.DEVICE] = _deviceTimeout;

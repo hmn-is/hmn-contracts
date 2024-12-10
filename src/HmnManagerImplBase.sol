@@ -5,6 +5,7 @@ import {OwnerUpgradeableImplWithDelay} from "./abstract/OwnerUpgradeableImplWith
 
 import {IHmnManagerBase} from "./interfaces/IHmnManagerBase.sol";
 import {IWorldID} from "./interfaces/IWorldID.sol";
+import {IHmnBase} from "./interfaces/IHmnBase.sol";
 
 import './utils/LibsAndTypes.sol';
 
@@ -76,10 +77,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
 
     /// @notice Minimum World ID verification level needed for transfers
     uint256 public requiredVerificationLevelForTransfer;
-    
-    /// @notice Permanent whitelist for critical contracts (e.g. DEX routers)
-    /// @dev Once added, addresses cannot be removed
-    mapping(address => bool) public permanentWhitelist;
+  
     
     /// @notice Maps whitelisted contracts to their approver
     mapping(address => Address32) public contractWhitelist;
@@ -244,10 +242,6 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     /// @param admin The new admin address
     event AdminSet(address indexed admin);
 
-    /// @notice Emitted when a contract is added to the permanent whitelist
-    /// @param account The whitelisted contract address
-    event ContractAddedToPermanentWhitelist(address indexed account);
-
     /// @notice Emitted when a contract is whitelisted by the owner
     /// @param contractAddr The whitelisted contract address
     /// @param approver The address that approved the whitelist
@@ -393,13 +387,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
         admin = _admin;
         emit AdminSet(_admin);
     }
-  
-    /// @notice Permanently whitelist a critical utility contract such as a defi router or pool for guaranteed tradability
-    /// @param account The contract address to whitelist
-    function addToPermanentWhitelist(address account) external virtual onlyOwner onlyProxy onlyInitialized {
-        permanentWhitelist[account] = true;
-        emit ContractAddedToPermanentWhitelist(account);
-    }
+
 
     /// @notice Manually whitelist (or delist) a utility contract (eg. a defi router or pool).
     /// @param contractAddr The contract address to add
@@ -470,13 +458,10 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     /// @notice Validates whether a transfer between two addresses is allowed (for free or at all)
     /// @return fee percentage [0-1%], if configured, to be applied to untrusted transfers
     /// @dev Transfer control algorithm:
-    ///      1. Guarantee tradability:
-    ///         - If protection mode is ALLOW_ALL, allow all transfers
-    ///         - Always allow transfers to permanently whitelisted addresses (e.g. DEX pools)
+    ///      1. If protection mode is ALLOW_ALL, allow all transfers
     ///
     ///      2. Block blacklisted bots
-    ///         - Block blacklisted bots from interacting with anyone,
-    /// except for selling their tokens to permanently whitelisted markets
+    ///         - Block blacklisted bots from interacting with anyone (note: the token contract still allows sell to whitelisted markets)
     ///         - If mode is BLOCK_BOTS_ONLY, allow all non-bot transfers
     ///
     ///      3. In relaxed modes, allow all transfers to and/or from contracts
@@ -484,28 +469,26 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     ///         - ALLOW_FROM_CONTRACTS: Allow sending from any contract  
     ///         - ALLOW_ALL_CONTRACTS: Allow if either party is a contract
     ///
-    ///      4. Core WorldID humanity verification based rules:
-    ///         - Allow explictly enables transfer pairs
+    ///      4. Core rules based on WorldID verified humanity and trusted pairs
+    ///         - Allow explictly enabled transfer pairs
     ///         - Allow transfer if both:
-    ///           • Sender is verified human or a whitelisted contract
-    ///           • Recipient is verified human or a whitelisted contract
+    ///           • Sender is a verified human or a whitelisted contract
+    ///           • Recipient is a verified human or a whitelisted contract
     ///
-    ///      5. In the default pioneering mode, all transfers to contracts within transaction originating from trusted pioneers.
+    ///      5. In the default pioneering mode, allow and whitelist all contracts within transactions originating from trusted pioneers.
     ///         This enables protocol learning and trusted network expansion.
     ///
     ///      6. Finally, if all checks fail, either revert with a detailed error or return an untrust fee.
     /// @param from Source address of the transfer
     /// @param to Destination address of the transfer
     function checkTrust(address from, address to) public virtual onlyProxy onlyInitialized returns (uint256) {
-        // 1. Guarantee tradability
+        // 1. Allow all transfers if protection is disabled
         if (transferProtectionMode == TransferProtectionModes.ALLOW_ALL) return 0;
-        if (permanentWhitelist[to]) return 0;
 
         // 2. Block blacklisted bots
         uint256 fromBlacklistedUntil = botBlacklist[BLOCKCHAIN_ID][from.toAddress32()];
         uint256 toBlacklistedUntil = botBlacklist[BLOCKCHAIN_ID][to.toAddress32()];
-        
-        if (fromBlacklistedUntil > block.timestamp && !permanentWhitelist[from]) revert BlacklistedSender(from);
+        if (fromBlacklistedUntil > block.timestamp && !IHmnBase(HMN).permanentWhitelist(from)) revert BlacklistedSender(from);
         if (toBlacklistedUntil > block.timestamp) revert BlacklistedRecipient(to);
         if (transferProtectionMode == TransferProtectionModes.BLOCK_BOTS_ONLY) return 0;
 
@@ -515,7 +498,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
         if (transferProtectionMode == TransferProtectionModes.ALLOW_ALL_CONTRACTS && (isContract(to) || isContract(from))) return 0;
 
         // 4. Check Verification registry and whitelists
-        bool fromOk = permanentWhitelist[from] || contractWhitelist[from].isSet() || isVerifiedForTransfer(from);
+        bool fromOk = contractWhitelist[from].isSet() || isVerifiedForTransfer(from) || IHmnBase(HMN).permanentWhitelist(from);
         bool toOk = contractWhitelist[to].isSet() || isVerifiedForTransfer(to);
         if (fromOk && toOk) return 0;
         if (fromToWhitelist[from] == ANYWHERE || fromToWhitelist[from] == to) return 0;
