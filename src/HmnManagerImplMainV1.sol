@@ -317,8 +317,6 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
         actionId = _actionId;
         contractNullifier = abi.encodePacked(abi.encodePacked(_appId).hashToField(), _actionId).hashToField();
         _setTransferProtectionMode(_transferProtectionMode);
-        // _setUntrustFee(_untrustFee);
-        // if (1+1==2) revert ('TEST');
         
         // Mark the contract as initialized.
         __setInitialized();
@@ -544,17 +542,17 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
         }
     }
 
-    /// @notice Sets the fee percentage for untrusted transfers
+    /// @notice Sets the fee percentage for unverified transfers
     /// @param feePercentage The fee percentage in basis points (0-100)
-    function setUntrustFee(uint256 feePercentage) public virtual override onlyOwner onlyProxy onlyInitialized {
-        super.setUntrustFee(feePercentage);
-        _announceSetUntrustFee(feePercentage);
+    function setUnverifiedFee(uint256 feePercentage) public virtual override onlyOwner onlyProxy onlyInitialized {
+        super.setUnverifiedFee(feePercentage);
+        _announceSetUnverifiedFee(feePercentage);
     }
 
     
-    function _announceSetUntrustFee(uint256 feePercentage) internal virtual {
+    function _announceSetUnverifiedFee(uint256 feePercentage) internal virtual {
         for (uint256 i = 0; i < hmnBridges.length; i++) {
-            hmnBridges[i].setUntrustFee(feePercentage);
+            hmnBridges[i].setUnverifiedFee(feePercentage);
         }
     }
 
@@ -748,9 +746,9 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
     /// @dev For convenience, cancel recovery request for tx.origin, since it has to be in possession of its private keys to send this transaction
     /// @dev Note that this automatic cancellation does not trigger for contract wallets interacted with via meta-transactions.
     ///      For contract wallets, recovery must be denied manually, or through verification.
-    function checkTrust(address from, address to) public virtual override (HmnManagerImplBase, IHmnManagerBase) onlyProxy onlyInitialized returns (uint256) {
+    function verifyTransfer(address from, address to) public virtual override (HmnManagerImplBase, IHmnManagerBase) onlyProxy onlyInitialized returns (uint256) {
         if (_msgSender() == HMN) _denyRecoveryRequest(tx.origin);
-        return super.checkTrust(from, to);
+        return super.verifyTransfer(from, to);
     }
 
     ///////////////////////////////////////////////////////////////////////////////

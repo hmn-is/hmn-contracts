@@ -112,8 +112,8 @@ contract HmnManagerImplSlaveV1 is HmnManagerImplBase, IHmnManagerBridge {
         super.setRequiredVerificationLevelForTransfer(newLevel);
     }
 
-    function setUntrustFee(uint256 newFee) public virtual override (HmnManagerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
-        super.setUntrustFee(newFee);
+    function setUnverifiedFee(uint256 newFee) public virtual override (HmnManagerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {
+        super.setUnverifiedFee(newFee);
     }
     
     function setTimeout(uint256 _verificationLevel, uint256 _timeout) public virtual override (HmnManagerImplBase, IHmnManagerBridge) onlyAdmin onlyProxy onlyInitialized {

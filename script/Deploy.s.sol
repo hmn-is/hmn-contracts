@@ -15,7 +15,7 @@ contract Deploy is Script {
     uint256 constant MOVE_OUT_TIME = 24 hours;
     uint256 constant TRANSFER_PROTECTION_MODE = 5;
     uint256 constant REQUIRED_VERIFICATION_LEVEL_FOR_TRANSFER = 0; // Device verification
-    uint256 constant UNTRUST_FEE = 101; // Block transfer
+    uint256 constant MAX_FEE_BPS = 101; // Block transfer
     uint256 constant ON_CHAIN_VERIFICATION_LEVEL = 1; // WorldID Group ID 1
     bool constant ALLOW_ACCOUNT_REUSE = false;
 
@@ -60,7 +60,7 @@ contract Deploy is Script {
 
         console.log("HMN Token:", address(hmn));
         HmnManagerImplMainV1(address(manager)).setHmnAddress(address(hmn));
-        HmnManagerImplMainV1(address(manager)).setUntrustFee(101);
+        HmnManagerImplMainV1(address(manager)).setUnverifiedFee(101);
 
         vm.stopBroadcast();
 

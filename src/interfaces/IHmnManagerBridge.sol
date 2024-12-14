@@ -5,7 +5,7 @@ import { BlockChainId, Address32 } from "../utils/LibsAndTypes.sol";
 
 interface IHmnManagerBridge {
 
-    function setUntrustFee(uint256 feePercentage) external;
+    function setUnverifiedFee(uint256 feePercentage) external;
 
     function setRequiredVerificationLevelForTransfer(uint256 verificationLevel) external;
     

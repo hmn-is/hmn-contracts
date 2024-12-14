@@ -95,11 +95,11 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     /// @dev A magic address for marking a from-to whitelisted (bridge) contract that is allowed to send anywhere
     address internal constant ANYWHERE = address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
 
-    /// @notice Fee percentage for untrusted transfers (in basis points, 0-10000)
-    uint256 public untrustFee;
+    /// @notice Fee percentage for unverified transfers (in basis points, 0-100)
+    uint256 public unverifiedFee;
 
     /// @dev Maximum fee that can be charged (100 basis points = 1%)
-    uint256 public constant MAX_UNTRUST_FEE = 100;
+    uint256 public constant MAX_FEE_BPS = 100;
 
     ///////////////////////////////////////////////////////////////////////////////
     ///                                ERRORS                                    ///
@@ -118,10 +118,10 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     /// @param approverOrZero The address attempting to approve (or zero for removal)
     error UnauthorisedApproverOrInvalidRequest(address contractAddr, address approverOrZero);
 
-    /// @notice Thrown when a transfer involves an untrusted contract
-    /// @param account The address of the untrusted contract
+    /// @notice Thrown when a transfer involves an unverified contract
+    /// @param account The address of the unverified contract
     /// @param hint A message providing guidance on how to resolve the issue
-    error UntrustedContract(address account, string hint);
+    error UnverifiededContract(address account, string hint);
 	  
     /// @notice Thrown when sender's verification level is below required threshold
     /// @param account The address with insufficient verification
@@ -279,9 +279,9 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     /// @param chainId The removed chain ID
     event ChainRemoved(BlockChainId indexed chainId);
 
-    /// @notice Emitted when untrust fee is updated
+    /// @notice Emitted when unverified fee is updated
     /// @param fee The new fee percentage in basis points
-    event UntrustFeeSet(uint256 fee);
+    event UnverifiedFeeSet(uint256 fee);
 
     ///////////////////////////////////////////////////////////////////////////////
     ///                        ACCESS CONTROL MODIFIERS                         ///
@@ -368,15 +368,15 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
         emit RequiredVerificationLevelSet(newLevel);
     }
     
-    function setUntrustFee(uint256 newFee) public virtual onlyAdminOrOwner onlyProxy onlyInitialized {
-        _setUntrustFee(newFee);
-        emit UntrustFeeSet(newFee);
+    function setUnverifiedFee(uint256 newFee) public virtual onlyAdminOrOwner onlyProxy onlyInitialized {
+        _setUnverifiedFee(newFee);
+        emit UnverifiedFeeSet(newFee);
     }
 
-    function _setUntrustFee(uint256 newFee) internal virtual {
-        // Allow 1 basis point more than the maximum disables untrusted transfers completely
-        if (newFee > MAX_UNTRUST_FEE + 1) revert InvalidFeePercentage(newFee);
-        untrustFee = newFee;
+    function _setUnverifiedFee(uint256 newFee) internal virtual {
+        // Allow 1 basis point more than the maximum disables unverified transfers completely
+        if (newFee > MAX_FEE_BPS + 1) revert InvalidFeePercentage(newFee);
+        unverifiedFee = newFee;
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -438,7 +438,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
         emit FromToWhitelistAdjusted(account, toOrAnywhere);
     }
   
-    /// @notice Undo all whitelistings (and revoke status) of a pioneer that has been found deemed untrustworthy.
+    /// @notice Undo all whitelistings (and revoke status) of a pioneer that has been found deemed unverifiedworthy.
     /// @param approver32 The address whose whitelistings to undo
     function undoPioneering(BlockChainId chainId, Address32 approver32) public virtual onlyAdminOrOwner onlyProxy onlyInitialized {
         address[] memory contracts = whitelistedContractsByApprover[approver32];
@@ -456,7 +456,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     ///////////////////////////////////////////////////////////////////////////////
 
     /// @notice Validates whether a transfer between two addresses is allowed (for free or at all)
-    /// @return fee percentage [0-1%], if configured, to be applied to untrusted transfers
+    /// @return fee percentage [0-1%], if configured, to be applied to unverified transfers
     /// @dev Transfer control algorithm:
     ///      1. If protection mode is ALLOW_ALL, allow all transfers
     ///
@@ -478,10 +478,10 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     ///      5. In the default pioneering mode, allow and whitelist all contracts within transactions originating from trusted pioneers.
     ///         This enables protocol learning and trusted network expansion.
     ///
-    ///      6. Finally, if all checks fail, either revert with a detailed error or return an untrust fee.
+    ///      6. Finally, if all checks fail, either revert with a detailed error or return an unverified fee.
     /// @param from Source address of the transfer
     /// @param to Destination address of the transfer
-    function checkTrust(address from, address to) public virtual onlyProxy onlyInitialized returns (uint256) {
+    function verifyTransfer(address from, address to) public virtual onlyProxy onlyInitialized returns (uint256) {
         // 1. Allow all transfers if protection is disabled
         if (transferProtectionMode == TransferProtectionModes.ALLOW_ALL) return 0;
 
@@ -519,13 +519,13 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
             if (fromOk && toOk) return 0;
         }
 
-        // 6. Revert if untrust fee is set to a value higher than allowed
-        if (untrustFee > MAX_UNTRUST_FEE) {
+        // 6. Revert if unverified fee is set to a value higher than allowed
+        if (unverifiedFee > MAX_FEE_BPS) {
           revertIfReason(from, true);
           revertIfReason(to, false);
         }
-        // Return configured fee for untrusted transfer
-        return untrustFee;
+        // Return configured fee for unverified transfer
+        return unverifiedFee;
         
     }
 
@@ -550,7 +550,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     /// @param account The address to check
     function revertIfReason(address account, bool isFrom) internal virtual view {
         uint256 timestamp = getVerificationTimestamp(account);
-        if (timestamp == 0 && isContract(account)) revert UntrustedContract(account, getContractHint(account));
+        if (timestamp == 0 && isContract(account)) revert UnverifiededContract(account, getContractHint(account));
         
         bool isUnverified = timestamp == 0 && !isContract(account);
         if (isUnverified && isFrom) revert UnverifiedDestination(account, getAccountHint(account));

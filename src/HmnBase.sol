@@ -20,7 +20,7 @@ abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
     IHmnManagerBase internal immutable hmnManager;
 
     /// @notice Maximum fee that can be charged (100 basis points = 1%)
-    uint256 public constant MAX_UNTRUST_FEE = 100;
+    uint256 public constant MAX_FEE_BPS = 100;
 
     /// @notice Bot fee percentage (1-100) for "confessed bot" accounts, 0 means feature is disabled
     uint256 public botFeeBps;
@@ -39,11 +39,11 @@ abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
     /// @dev Once enabled, cannot be disabled
     mapping(address => bool) public botConfessions;
 
-    /// @notice Emitted when a fee is paid for an untrusted transfer
+    /// @notice Emitted when a fee is paid for an unverified transfer
     /// @param from Source address of the transfer
     /// @param value Amount of tokens transferred
     /// @param fee Amount of tokens paid as a fee
-    event UntrustFeePaid(address indexed from, uint256 value, uint256 fee);
+    event UnverifiedFeePaid(address indexed from, uint256 value, uint256 fee);
     
     /// @notice Emitted when a fee is paid to opt-out of human verification
     /// @param from Source address of the transfer
@@ -79,7 +79,7 @@ abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
     /// @dev In order to guarantee trustless tradeability, the bot fee cannot be unset
     /// @param _botFee New bot fee percentage (1-100)
     function setBotFee(uint256 _botFee) external virtual onlyOwner {
-        if (_botFee == 0 || _botFee > MAX_UNTRUST_FEE) {
+        if (_botFee == 0 || _botFee > MAX_FEE_BPS) {
             revert InvalidBotFee();
         }
         botFeeBps = _botFee;
@@ -94,13 +94,13 @@ abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
     }
 
     /// @notice Calculate fee amount based on value and fee basis points
-    /// @dev Ensures fee is capped at MAX_UNTRUST_FEE and enforces minimum fee of 1 if any fee is charged
+    /// @dev Ensures fee is capped at MAX_FEE_BPS and enforces minimum fee of 1 if any fee is charged
     /// @param value The amount being transferred
     /// @param feeBps The fee in basis points (0-100)
     /// @return The calculated fee amount
     function calculateFee(uint256 value, uint256 feeBps) internal pure returns (uint256) {
         if (value == 0 || feeBps == 0) return 0;
-        uint256 cappedFeeBps = feeBps > MAX_UNTRUST_FEE ? MAX_UNTRUST_FEE : feeBps;
+        uint256 cappedFeeBps = feeBps > MAX_FEE_BPS ? MAX_FEE_BPS : feeBps;
         uint256 fee = value * cappedFeeBps / 10000;
         return fee == 0 ? 1 : fee; // Ensure minimum fee of 1
     }
@@ -128,15 +128,15 @@ abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
             return;
         }
 
-        uint256 untrustFee = hmnManager.checkTrust(from, to);
-        uint256 fee = calculateFee(value, untrustFee);
+        uint256 unverifiedFee = hmnManager.verifyTransfer(from, to);
+        uint256 fee = calculateFee(value, unverifiedFee);
         if (fee == 0) {
             super._update(from, to, value);
         } else {
             uint256 valueAfterFee = value - fee;
             super._update(from, to, valueAfterFee);
             super._update(from, address(hmnManager), fee);
-            emit UntrustFeePaid(from, value, fee);
+            emit UnverifiedFeePaid(from, value, fee);
         }
     }
 

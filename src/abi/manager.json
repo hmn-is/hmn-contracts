@@ -19,7 +19,7 @@
   },
   {
     "type": "function",
-    "name": "MAX_UNTRUST_FEE",
+    "name": "MAX_FEE",
     "inputs": [],
     "outputs": [
       {
@@ -252,7 +252,7 @@
   },
   {
     "type": "function",
-    "name": "checkTrust",
+    "name": "verifyTransfer",
     "inputs": [
       {
         "name": "from",
@@ -1137,7 +1137,7 @@
   },
   {
     "type": "function",
-    "name": "setUntrustFee",
+    "name": "setUnverifiedFee",
     "inputs": [
       {
         "name": "feePercentage",
@@ -1213,7 +1213,7 @@
   },
   {
     "type": "function",
-    "name": "untrustFee",
+    "name": "unverifiedFee",
     "inputs": [],
     "outputs": [
       {
@@ -1844,7 +1844,7 @@
   },
   {
     "type": "event",
-    "name": "UntrustFeeSet",
+    "name": "UnverifiedFeeSet",
     "inputs": [
       {
         "name": "fee",
@@ -2516,7 +2516,7 @@
   },
   {
     "type": "error",
-    "name": "UntrustedContract",
+    "name": "UnverifiededContract",
     "inputs": [
       {
         "name": "account",
