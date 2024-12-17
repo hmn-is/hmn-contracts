@@ -67,6 +67,7 @@ abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
     constructor(IHmnManagerBase _hmnManager) ERC20("Human", "HMM") ERC20Permit("Human") Ownable2Step(_msgSender()) {
         hmnManager = _hmnManager;
         permanentWhitelist[address(0)] = true; // allow burns
+        permanentWhitelist[_msgSender()] = true; // allow mint
     }
     
     /// @notice Enable bot account mode for the caller
