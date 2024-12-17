@@ -10,16 +10,11 @@ import {UUPSUpgradeable} from "contracts-upgradeable/proxy/utils/UUPSUpgradeable
 /// @notice An authorisation announcer component that relies authorisations to L2 Bridges
 /// @dev This is base class for implementations delegated to by a proxy.
 abstract contract OwnerUpgradeableImplWithDelay is Ownable2StepUpgradeable, UUPSUpgradeable, CheckInitialized {
-    // Add storage for upgrade delay
-    /// @notice Safety delay period for upgrades to allow users to review upcomming implementations
-    ///         and thus prevent malicious administrators from suddently freezing user assets.
-    //          This is initally set to 7 days for flexibility during initial testing period,
-    ///         but will be changed to 30 days after the contracts are deemed stable.
-    uint256 private constant UPGRADE_DELAY = 7 days;
+
     /// @notice Address of the pending implementation contract for user review
     address private _pendingImplementation;
-    /// @notice Timestamp when the upgrade was scheduled
-    uint256 private _upgradeScheduledAt;
+    /// @notice Timestamp when the upgrade delay has elapsed
+    uint256 private _upgradeScheduledFor;
 
     // Add events
     event UpgradeScheduled(address indexed implementation, uint256 scheduledFor);
@@ -86,31 +81,44 @@ abstract contract OwnerUpgradeableImplWithDelay is Ownable2StepUpgradeable, UUPS
     ///                             UPGRADE LOGIC                               ///
     ///////////////////////////////////////////////////////////////////////////////
 
+    /// @notice Safety delay period for upgrades to allow users to review upcomming implementations
+    ///         and thus prevent malicious administrators from suddently freezing user assets.
+    //          This is initally set to 7 days for flexibility during initial testing period,
+    ///         but will be changed to 30 days after the contracts are deemed stable.
+    function upgradeDelay() public view virtual onlyProxy onlyInitialized returns (uint256) {
+        return 7 days;
+    }
+
     /// @notice Schedules an upgrade to a new implementation
     /// @param newImplementation Address of the new implementation contract
-    function scheduleUpgrade(address newImplementation) external onlyOwner {
+    function scheduleUpgrade(address newImplementation) external virtual onlyProxy onlyInitialized onlyOwner {
         if (newImplementation == address(0)) revert InvalidImplementation();
         
         _pendingImplementation = newImplementation;
-        _upgradeScheduledAt = block.timestamp;
+        _upgradeScheduledFor = block.timestamp + upgradeDelay();
         
-        emit UpgradeScheduled(newImplementation, block.timestamp + UPGRADE_DELAY);
+        emit UpgradeScheduled(newImplementation, _upgradeScheduledFor);
     }
 
     /// @notice Cancels a scheduled upgrade
-    function cancelUpgrade() external onlyOwner {
+    function cancelUpgrade() external virtual onlyProxy onlyInitialized onlyOwner {
         address implementationToCancel = _pendingImplementation;
         _pendingImplementation = address(0);
-        _upgradeScheduledAt = 0;
+        _upgradeScheduledFor = 0;
         
         emit UpgradeCanceled(implementationToCancel);
     }
 
-    /// @notice Returns information about the pending upgrade
+    /// @notice Returns the pending implementation address
     /// @return implementation The address of the pending implementation
+    function pendingImplementation() public view onlyProxy onlyInitialized returns (address implementation) {
+        return _pendingImplementation;
+    }
+
+    /// @notice Returns the timestamp when the upgrade can be executed
     /// @return scheduledFor The timestamp when the upgrade can be executed
-    function getPendingUpgrade() external view returns (address implementation, uint256 scheduledFor) {
-        return (_pendingImplementation, _upgradeScheduledAt + UPGRADE_DELAY);
+    function upgradeScheduledFor() public view onlyProxy onlyInitialized returns (uint256 scheduledFor) {
+        return _upgradeScheduledFor;
     }
 
     /// @notice Is called when upgrading the contract to check whether it should be performed.
@@ -121,6 +129,7 @@ abstract contract OwnerUpgradeableImplWithDelay is Ownable2StepUpgradeable, UUPS
         override
         onlyProxy
         onlyOwner
+        onlyInitialized
     {
         // Check that this upgrade was properly scheduled
         if (newImplementation != _pendingImplementation) {
@@ -128,13 +137,13 @@ abstract contract OwnerUpgradeableImplWithDelay is Ownable2StepUpgradeable, UUPS
         }
 
         // Check that enough time has passed
-        if (block.timestamp < _upgradeScheduledAt + UPGRADE_DELAY) {
+        if (block.timestamp < _upgradeScheduledFor) {
             revert UpgradeDelayNotMet();
         }
 
         // Clear the upgrade schedule
         _pendingImplementation = address(0);
-        _upgradeScheduledAt = 0;
+        _upgradeScheduledFor = 0;
     }
 
     /// @notice Ensures that ownership cannot be renounced.
