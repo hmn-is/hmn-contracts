@@ -64,7 +64,7 @@ abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
     error InvalidBotFee();
 
     /// @param _hmnManager Address of the contract that validates human verification
-    constructor(IHmnManagerBase _hmnManager) ERC20("Human", "HMM") ERC20Permit("Human") Ownable2Step(_msgSender()) {
+    constructor(IHmnManagerBase _hmnManager) ERC20("Human", "HMN") ERC20Permit("Human") Ownable2Step(_msgSender()) {
         hmnManager = _hmnManager;
         permanentWhitelist[address(0)] = true; // allow burns
         permanentWhitelist[_msgSender()] = true; // allow mint
