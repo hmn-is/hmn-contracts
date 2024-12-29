@@ -104,14 +104,14 @@ contract HmnSafeImplV1 is OwnerUpgradeableImplWithDelay, IERC721Receiver {
 
     /// @notice Initializes the contract.
     /// @dev Must be called exactly once.
-    /// @param withdrawalDelay The safety delay period for withdrawals in seconds
+    /// @param withdrawalDelay The safety delay period for withdrawals and upgrades in seconds
     /// @dev This is marked `reinitializer()` to allow for updated initialisation steps when working
     ///      with upgrades based upon this contract. Be aware that there are only 256 (zero-indexed)
     ///      initialisations allowed, so decide carefully when to use them. Many cases can safely be
     ///      replaced by use of setters.
     function initialize(uint256 withdrawalDelay) public reinitializer(1) {
         // Initialize parent contracts
-        __delegateInit();
+        __delegateInit(withdrawalDelay);
                 
         _withdrawDelay = withdrawalDelay;
 
@@ -120,8 +120,8 @@ contract HmnSafeImplV1 is OwnerUpgradeableImplWithDelay, IERC721Receiver {
 
     /// @notice Performs the initialisation steps necessary for the base contracts of this contract.
     /// @dev Must be called during `initialize` before performing any additional steps.
-    function __delegateInit() internal virtual onlyInitializing {
-        __OwnerUpgradeableImplWithDelay_init();
+    function __delegateInit(uint256 upgradeDelay) internal virtual onlyInitializing {
+        __OwnerUpgradeableImplWithDelay_init(upgradeDelay);
     }
 
     ///////////////////////////////////////////////////////////////////////////////

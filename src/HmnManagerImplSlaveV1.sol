@@ -84,14 +84,16 @@ contract HmnManagerImplSlaveV1 is HmnManagerImplBase, IHmnManagerBridge {
     /// @param _requiredVerificationLevelForTransfer The required verification level for transfers
     /// @param _transferProtectionMode The transfer protection mode to set
     /// @param _admin The address of the admin account
+    /// @param _upgradeDelay The upgrade delay to set
     function initialize(
         BlockChainId _chainId,
         uint256 _requiredVerificationLevelForTransfer,
         uint256 _transferProtectionMode,
-        address _admin
+        address _admin,
+        uint256 _upgradeDelay
     ) public reinitializer(1) {
         // Initialize the sub-contracts.
-        __HmnManagerImplBase_init();
+        __HmnManagerImplBase_init(_upgradeDelay);
 
         // Start of custom initilization logic for this contract and version
         BLOCKCHAIN_ID = _chainId;

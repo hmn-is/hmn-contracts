@@ -13,8 +13,12 @@ abstract contract OwnerUpgradeableImplWithDelay is Ownable2StepUpgradeable, UUPS
 
     /// @notice Address of the pending implementation contract for user review
     address private _pendingImplementation;
+    
     /// @notice Timestamp when the upgrade delay has elapsed
     uint256 private _upgradeScheduledFor;
+    
+    /// @notice Safety delay period for upgrades
+    uint256 private _upgradeDelay;
 
     // Add events
     event UpgradeScheduled(address indexed implementation, uint256 scheduledFor);
@@ -55,10 +59,12 @@ abstract contract OwnerUpgradeableImplWithDelay is Ownable2StepUpgradeable, UUPS
 
     /// @notice Performs the initialisation steps necessary for the base contracts of this contract.
     /// @dev Must be called during `initialize` before performing any additional steps.
-    function __OwnerUpgradeableImplWithDelay_init() internal virtual onlyInitializing {
+    /// @param upgradeDelay The safety delay period for upgrades in seconds
+    function __OwnerUpgradeableImplWithDelay_init(uint256 upgradeDelay) internal virtual onlyInitializing {
         __Ownable2Step_init();
         __UUPSUpgradeable_init();
         _transferOwnership(_msgSender()); // __Ownable2Step_init 'fails' to do this
+        _upgradeDelay = upgradeDelay;
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -83,10 +89,8 @@ abstract contract OwnerUpgradeableImplWithDelay is Ownable2StepUpgradeable, UUPS
 
     /// @notice Safety delay period for upgrades to allow users to review upcomming implementations
     ///         and thus prevent malicious administrators from suddently freezing user assets.
-    //          This is initally set to 7 days for flexibility during initial testing period,
-    ///         but will be changed to 30 days after the contracts are deemed stable.
     function upgradeDelay() public view virtual onlyProxy onlyInitialized returns (uint256) {
-        return 7 days;
+        return _upgradeDelay;
     }
 
     /// @notice Schedules an upgrade to a new implementation

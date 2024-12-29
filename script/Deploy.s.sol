@@ -20,10 +20,13 @@ contract Deploy is Script {
     uint256 constant MAX_FEE_BPS = 101; // Block transfer
     uint256 constant ON_CHAIN_VERIFICATION_LEVEL = 1; // WorldID Group ID 1
     bool constant ALLOW_ACCOUNT_REUSE = false;
-    uint256 constant REWARD_SAFE_DELAY = 7 days; // Increase after increasing the upgrade safety period
-    uint256 constant COMMUNITY_SAFE_DELAY = 7 days; // Increase after increasing the upgrade safety period
-    uint256 constant TEAM_SAFE_DELAY = 7 days; // Increase after increasing the upgrade safety period
-    uint256 constant LIQUIDITY_SAFE_DELAY = 2 days;
+    // Delays are intially low to allow for flexibility during initial testing period,
+    // but will be changed to 30 days after the contracts are deemed stable.
+    uint256 constant MANAGER_UPGRADE_DELAY = 7 days;
+    uint256 constant REWARD_SAFE_DELAY = 7 days;
+    uint256 constant COMMUNITY_SAFE_DELAY = 7 days;
+    uint256 constant TEAM_SAFE_DELAY = 7 days;
+    uint256 constant LIQUIDITY_SAFE_DELAY = 1 days;
 
     function run() external returns (address, address, address, address, address) {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
@@ -33,9 +36,9 @@ contract Deploy is Script {
         // Deploy implementation
         beginBroadcast();
         
-        // Create initialization call
+        // Create initialization call for manager
         bytes memory initializeCall = abi.encodeWithSignature(
-            "initialize(address,address,uint256,string,string,uint256,uint256,uint256,uint256,bool,uint256,uint256)",
+            "initialize(address,address,uint256,string,string,uint256,uint256,uint256,uint256,bool,uint256,uint256,uint256)",
             vm.envAddress("ADMIN_ADDRESS"),
             IWorldID(vm.envAddress("WORLD_ID_ROUTER")),
             ON_CHAIN_VERIFICATION_LEVEL,
@@ -47,7 +50,8 @@ contract Deploy is Script {
             MOVE_OUT_TIME,
             ALLOW_ACCOUNT_REUSE,
             TRANSFER_PROTECTION_MODE,
-            REQUIRED_VERIFICATION_LEVEL_FOR_TRANSFER
+            REQUIRED_VERIFICATION_LEVEL_FOR_TRANSFER,
+            MANAGER_UPGRADE_DELAY
         );
 
         HmnManagerImplMainV1 impl = new HmnManagerImplMainV1();
@@ -77,7 +81,7 @@ contract Deploy is Script {
             REWARD_SAFE_DELAY
         );
 
-        bytes memory communitySafeInitCall = abi.encodeWithSignature(
+       bytes memory communitySafeInitCall = abi.encodeWithSignature(
             "initialize(uint256)",
             COMMUNITY_SAFE_DELAY
         );
@@ -121,7 +125,6 @@ contract Deploy is Script {
         // Get deployer's token balance
         uint256 deployerBalance = hmn.balanceOf(deployer);
         console.log("Deployer balance:", deployerBalance);
-
         
         // Transfer tokens to safes
         uint256 rewardAmount = (deployerBalance * 50) / 100;

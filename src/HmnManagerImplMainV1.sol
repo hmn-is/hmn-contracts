@@ -282,6 +282,7 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
     /// @param _moveOutTime The time window for moving funds out after renouncing an account
     /// @param _allowAccountReuse Whether to allow reuse of previously verified accounts
     /// @param _transferProtectionMode The initial transfer protection mode
+    /// @param _upgradeDelay Allow users to review the upgrade before it is applied
     function initialize(
       address _admin,
       IWorldID _worldId,
@@ -294,11 +295,12 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
       uint256 _moveOutTime,
       bool _allowAccountReuse,
       uint256 _transferProtectionMode,
-      uint256 _requiredVerificationLevelForTransfer
+      uint256 _requiredVerificationLevelForTransfer,
+      uint256 _upgradeDelay
     ) public reinitializer(1) {
         
         // Initialize parent contracts
-        __delegateInit();
+        __delegateInit(_upgradeDelay);
         
         // Start of custom initilization logic for this contract and version
         BLOCKCHAIN_ID = BlockChainIds.ETHEREUM;
@@ -324,8 +326,8 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
 
     /// @notice Performs the initialisation steps necessary for the base contracts of this contract.
     /// @dev Must be called during `initialize` before performing any additional steps.
-    function __delegateInit() internal virtual onlyInitializing {
-        __HmnManagerImplBase_init();
+    function __delegateInit(uint256 upgradeDelay) internal virtual onlyInitializing {
+        __HmnManagerImplBase_init(upgradeDelay);
         __EIP712_init("HmnManager", "1");
     }
 

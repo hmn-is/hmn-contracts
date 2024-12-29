@@ -315,8 +315,8 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     ///      is accounted for here.
     ///
     /// @custom:reverts string If called more than once.
-    function __HmnManagerImplBase_init() internal virtual onlyInitializing {
-        __OwnerUpgradeableImplWithDelay_init();
+    function __HmnManagerImplBase_init(uint256 upgradeDelay) internal virtual onlyInitializing {
+        __OwnerUpgradeableImplWithDelay_init(upgradeDelay);
     }
 
     /// @notice Sets the HMN token address
