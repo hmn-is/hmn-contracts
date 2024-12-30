@@ -35,6 +35,10 @@ contract Deploy is Script {
 
         // Deploy implementation
         beginBroadcast();
+
+        // These are kept outside of initilize to meet max contract size requirements
+        if (0 != ORB_TIMEOUT && ORB_TIMEOUT < 10 minutes) revert("InvalidOrbTimeout");
+        if (0 != DEVICE_TIMEOUT && DEVICE_TIMEOUT < 10 minutes) revert("InvalidDeviceTimeout");
         
         // Create initialization call for manager
         bytes memory initializeCall = abi.encodeWithSignature(
