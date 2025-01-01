@@ -305,25 +305,6 @@
   },
   {
     "type": "function",
-    "name": "deviceVerificationNonces",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "eip712Domain",
     "inputs": [],
     "outputs": [
@@ -929,10 +910,15 @@
   },
   {
     "type": "function",
-    "name": "saveSignedDeviceVerification",
+    "name": "saveSignedVerification",
     "inputs": [
       {
-        "name": "deviceHash",
+        "name": "level",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "nullifierHash",
         "type": "uint256",
         "internalType": "uint256"
       },
@@ -1211,6 +1197,25 @@
     ],
     "outputs": [],
     "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "verificationNonces",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -1999,17 +2004,6 @@
   },
   {
     "type": "error",
-    "name": "AlreadyOrbVerified",
-    "inputs": [
-      {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
     "name": "BlacklistedRecipient",
     "inputs": [
       {
@@ -2175,6 +2169,22 @@
   },
   {
     "type": "error",
+    "name": "InsufficientVerificationLevel",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "level",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "InvalidAddress",
     "inputs": [
       {
@@ -2257,7 +2267,7 @@
         "internalType": "address"
       },
       {
-        "name": "account",
+        "name": "sender",
         "type": "address",
         "internalType": "address"
       },
@@ -2267,7 +2277,12 @@
         "internalType": "uint256"
       },
       {
-        "name": "deviceHash",
+        "name": "groupId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "nullifierHash",
         "type": "uint256",
         "internalType": "uint256"
       },

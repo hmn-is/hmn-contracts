@@ -85,7 +85,7 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
     /// OTHER CONFIGS
 
     /// @notice Nonces for verifying device acccounts for signature verification against replay attacks
-    mapping(address => uint256) public deviceVerificationNonces;
+    mapping(address => uint256) public verificationNonces;
 
     /// @notice Allowed slack between server clock and blockchain clock in device verification
     uint256 public constant CLOCK_SKEW = 60;
@@ -169,8 +169,8 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
     );
 
 
-    /// @notice Thrown when attempting to device verify an already orb verified address
-    error AlreadyOrbVerified(address account);
+    /// @notice Thrown when attempting to downgrade verify level
+    error InsufficientVerificationLevel(address account, uint256 level);
 
     /// @notice Thrown when using unauthorized human hash
     error UnauthorisedHash(uint256 humanHash);
@@ -181,9 +181,10 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
       bytes32 versionHash,
       uint256 chainId,
       address contractAddress,
-      address account,
+      address sender,
       uint256 timestamp,
-      uint256 deviceHash,
+      uint256 groupId,
+      uint256 nullifierHash,
       uint256 nonce,
       address signer,
       bytes signature
@@ -462,33 +463,35 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
         _announceToBridges(abi.encodeWithSelector(IHmnManagerBridge.undoPioneering.selector, chainId, approver32));
     }
 
-    /// @notice Saves a device verification sent by user wallet and signed by trusted server
-    function saveSignedDeviceVerification(
-        uint256 deviceHash,
+    /// @notice Saves a verification sent by user wallet and signed by trusted server
+    function saveSignedVerification(
+        uint256 level,
+        uint256 nullifierHash,
         uint256 timestamp,
         bytes memory signature
     ) external virtual onlyProxy onlyInitialized {
         address sender = _msgSender();
-        uint256 nonce = deviceVerificationNonces[sender];
+        uint256 nonce = verificationNonces[sender];
         bytes32 structHash = keccak256(abi.encode(
-            keccak256("deviceVerificationSignature(uint256 deviceHash,uint256 timestamp,address sender,uint256 nonce)"),
-            deviceHash,
+            keccak256("verificationSignature(uint256 level,uint256 nullifierHash,uint256 timestamp,address sender,uint256 nonce)"),
+            level,
+            nullifierHash,
             timestamp,
             sender,
             nonce
         ));
         bytes32 _hash = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(_hash, signature);
-        if (signer != admin && signer != owner()) revert InvalidSignature(_EIP712NameHash(), _EIP712VersionHash(), block.chainid, address(this), sender, timestamp, deviceHash, nonce, signer, signature);
-        deviceVerificationNonces[sender]++;
+        if (signer != admin && signer != owner()) revert InvalidSignature(_EIP712NameHash(), _EIP712VersionHash(), block.chainid, address(this), sender, timestamp, level, nullifierHash, nonce, signer, signature);
+        verificationNonces[sender]++;
 
         Verification memory verification = getVerification(sender);
-        if (verification.timestamp != 0 && verification.level > VerificationLevels.DEVICE) revert AlreadyOrbVerified(sender);
+        if (verification.timestamp != 0 && verification.level > level) revert InsufficientVerificationLevel(sender, level);
         if (timestamp > block.timestamp + CLOCK_SKEW) revert FutureTimestamp(timestamp, block.timestamp);
-        _requireSenderHashMatch(deviceHash);
+        _requireSenderHashMatch(nullifierHash);
 
-        _saveSenderHash(deviceHash);
-        _saveVerificationL1(deviceHash, VerificationLevels.DEVICE, timestamp);
+        _saveSenderHash(nullifierHash);
+        _saveVerificationL1(nullifierHash, level, timestamp);
     }
 
     function _saveVerificationL1(uint256 humanHash, uint256 verificationLevel, uint256 timestamp) internal virtual {
