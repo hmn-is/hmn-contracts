@@ -314,9 +314,10 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     /// @dev When adding new superclasses, ensure that any initialization that they need to perform
     ///      is accounted for here.
     ///
+    /// @param __upgradeDelay The safety safety delay period for upgrades in seconds
     /// @custom:reverts string If called more than once.
-    function __HmnManagerImplBase_init(uint256 upgradeDelay) internal virtual onlyInitializing {
-        __OwnerUpgradeableImplWithDelay_init(upgradeDelay);
+    function __HmnManagerImplBase_init(uint256 __upgradeDelay) internal virtual onlyInitializing {
+        __OwnerUpgradeableImplWithDelay_init(__upgradeDelay);
     }
 
     /// @notice Sets the HMN token address

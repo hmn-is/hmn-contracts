@@ -120,8 +120,8 @@ contract HmnSafeImplV1 is OwnerUpgradeableImplWithDelay, IERC721Receiver {
 
     /// @notice Performs the initialisation steps necessary for the base contracts of this contract.
     /// @dev Must be called during `initialize` before performing any additional steps.
-    function __delegateInit(uint256 upgradeDelay) internal virtual onlyInitializing {
-        __OwnerUpgradeableImplWithDelay_init(upgradeDelay);
+    function __delegateInit(uint256 __upgradeDelay) internal virtual onlyInitializing {
+        __OwnerUpgradeableImplWithDelay_init(__upgradeDelay);
     }
 
     ///////////////////////////////////////////////////////////////////////////////

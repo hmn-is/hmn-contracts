@@ -59,12 +59,12 @@ abstract contract OwnerUpgradeableImplWithDelay is Ownable2StepUpgradeable, UUPS
 
     /// @notice Performs the initialisation steps necessary for the base contracts of this contract.
     /// @dev Must be called during `initialize` before performing any additional steps.
-    /// @param upgradeDelay The safety delay period for upgrades in seconds
-    function __OwnerUpgradeableImplWithDelay_init(uint256 upgradeDelay) internal virtual onlyInitializing {
+    /// @param __upgradeDelay The safety delay period for upgrades in seconds
+    function __OwnerUpgradeableImplWithDelay_init(uint256 __upgradeDelay) internal virtual onlyInitializing {
         __Ownable2Step_init();
         __UUPSUpgradeable_init();
         _transferOwnership(_msgSender()); // __Ownable2Step_init 'fails' to do this
-        _upgradeDelay = upgradeDelay;
+        _upgradeDelay = __upgradeDelay;
     }
 
     ///////////////////////////////////////////////////////////////////////////////
