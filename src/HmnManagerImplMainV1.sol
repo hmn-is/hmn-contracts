@@ -3,14 +3,14 @@ pragma solidity ^0.8.21;
 
 import {HmnManagerImplBase} from "./HmnManagerImplBase.sol";
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import "contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {EIP712Upgradeable} from "contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import {IHmnManagerBridge} from "./interfaces/IHmnManagerBridge.sol";
 import {IHmnManagerMain} from "./interfaces/IHmnManagerMain.sol";
 import {IHmnManagerBase} from "./interfaces/IHmnManagerBase.sol";
 import {IWorldID} from "./interfaces/IWorldID.sol";
-import './utils/LibsAndTypes.sol';
+import {ByteHasher, MultiChainAddress, Address32, BlockChainId, Verification, Strings, VerificationLevels, BlockChainIds} from './utils/LibsAndTypes.sol';
+
 
 /// @title Human Verification Registry Implementation Version 1 - HMN coin only
 /// @notice A registry that manages human verification and account recovery on Ethereum Mainnet
@@ -157,7 +157,17 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
     error HumanAccountMismatch(uint256 humanHash);
 
     /// @notice Thrown when World ID verification fails
-    error WorldIDVerificationFailed(string reason);
+    error WorldIDVerificationFailed(
+      string reason,
+      address router,
+      uint256 root,
+      uint256 groupId,
+      uint256 signalHash,
+      uint256 nullifierHash,
+      uint256 externalNullifierHash,
+      uint256[8] proof
+    );
+
 
     /// @notice Thrown when attempting to device verify an already orb verified address
     error AlreadyOrbVerified(address account);
@@ -797,20 +807,40 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
         uint256 humanNullifier,
         uint256 _contractNullifier,
         uint256[8] calldata proof
-    ) internal view  virtual {
+    ) internal view virtual {
+        uint256 signalHash = abi.encodePacked(account).hashToField();
         try worldId.verifyProof(
             root,
             level,
-            abi.encodePacked(account).hashToField(),
+            signalHash,
             humanNullifier,
             _contractNullifier,
             proof
         ) {
             return;
-        } catch Error(string memory reason) {
-            revert WorldIDVerificationFailed(reason);
-        } catch {
-            revert WorldIDVerificationFailed("Unknown error");
+        } catch (bytes memory lowLevelData) {
+            // Possible error signatures:
+            // 0x00 - Possibly SemaphoreVerifier.verifyProof's 'Check pairing equation' static call revert with no data
+            // 0x7fcdd1f4 - ProofInvalid()
+            // 0xa54f8e27 - PublicInputNotInField()
+            // 0x09bde339 - InvalidProof()
+            // 0x3ae7359e - ExpiredRoot() Thrown when attempting to validate a root that has expired.
+            // 0xddae3b71 - NonExistentRoot() Thrown when attempting to validate a root that has yet to be added to the root history.
+            // 0xbaa3de5f - InvalidVerifier() Thrown when a verifier is initialized to be the zero address
+            // 0x4fdab253 - InvalidVerifierLUT()
+            // 0x8833b8c0 - UnsupportedTreeDepth(uint8)
+            // 0xa0b1d72d - MismatchedInputLengths()
+            // 0x8e4a23d6 - Unauthorized(address)
+            revert WorldIDVerificationFailed(
+                Strings.toHexString(uint256(uint160(bytes20(lowLevelData)))),
+                address(worldId),
+                root,
+                level,
+                signalHash,
+                humanNullifier,
+                _contractNullifier,
+                proof
+            );
         }
     }
 
