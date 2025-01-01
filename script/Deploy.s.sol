@@ -32,6 +32,10 @@ contract Deploy is Script {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
         console.log("Deploying from:", deployer);
         console.log("Deploying HMN manager and token");
+        console.log("NEXT_PUBLIC_WORLD_APP_ID", vm.envString("NEXT_PUBLIC_WORLD_APP_ID"));
+        console.log("NEXT_PUBLIC_WORLD_ACTION_HMN", vm.envString("NEXT_PUBLIC_WORLD_ACTION_HMN"));
+        console.log("WORLD_ID_ROUTER", vm.envString("WORLD_ID_ROUTER"));
+        
 
         // Deploy implementation
         beginBroadcast();
@@ -46,8 +50,8 @@ contract Deploy is Script {
             vm.envAddress("ADMIN_ADDRESS"),
             IWorldID(vm.envAddress("WORLD_ID_ROUTER")),
             ON_CHAIN_VERIFICATION_LEVEL,
-            vm.envString("NEXT_PUBLIC_APP_ID"),
-            vm.envString("NEXT_PUBLIC_ACTION"),
+            vm.envString("NEXT_PUBLIC_WORLD_APP_ID"),
+            vm.envString("NEXT_PUBLIC_WORLD_ACTION_HMN"),
             ORB_TIMEOUT,
             DEVICE_TIMEOUT,
             MIN_RECOVERY_SAFETY_PERIOD,
