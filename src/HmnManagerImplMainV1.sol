@@ -197,6 +197,9 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
 
     /// @notice Thrown when recovery safety period hasn't elapsed
     error RecoveryNotReady();
+    
+    /// @notice Thrown when anouncing changes to a bridge fails
+    error BridgeCallFailed(uint256 index, address bridge, bytes callData);
 
     ///////////////////////////////////////////////////////////////////////////////
     ///                                  EVENTS                                 ///
@@ -226,7 +229,8 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
     );
 
     /// @notice Emitted when bridge operation fails
-    event BridgeError(address indexed bridge, string reason);
+    event BridgeVerificationErrorEvent(address indexed bridge, string reason, BlockChainId chainId, Address32 account, uint256 verificationLevel, uint256 timestamp);
+
 
     /// @notice Emitted when recovery is authorized
     event RecoveryAuthorized(address indexed recoverer, address indexed addressToRecover);
@@ -440,48 +444,23 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
 
     function setTimeout(uint256 _verificationLevel, uint256 _timeout) public virtual override (HmnManagerImplBase) onlyOwner onlyProxy onlyInitialized {
         super.setTimeout(_verificationLevel, _timeout);
-        _announceSetTimeout(_verificationLevel, _timeout);
-    }
-
-    function _announceSetTimeout(uint256 _verificationLevel, uint256 _timeout) internal virtual {
-        for (uint256 i = 0; i < hmnBridges.length; i++) {
-            hmnBridges[i].setTimeout(_verificationLevel, _timeout);
-        }
+        _announceToBridges(abi.encodeWithSelector(IHmnManagerBridge.setTimeout.selector, _verificationLevel, _timeout));
     }
 
     function setBot(BlockChainId chainId, Address32 account, uint256 blacklistedUntil) public virtual override onlyOwner onlyProxy onlyInitialized {
         super.setBot(chainId, account, blacklistedUntil);
-        _announceSetBot(chainId, account, blacklistedUntil);
-    }
-
-    function _announceSetBot(BlockChainId chainId, Address32 account, uint256 blacklistedUntil) internal virtual {
-        for (uint256 i = 0; i < hmnBridges.length; i++) {
-            hmnBridges[i].setBot(chainId, account, blacklistedUntil);
-        }
+        _announceToBridges(abi.encodeWithSelector(IHmnManagerBridge.setBot.selector, chainId, account, blacklistedUntil));
     }
 
     function setPioneer(BlockChainId chainId, Address32 account, bool flag) public virtual override onlyOwner onlyProxy onlyInitialized {
         super.setPioneer(chainId, account, flag);
-        _announceSetPioneer(chainId, account, flag);
-    }
-
-    function _announceSetPioneer(BlockChainId chainId, Address32 account, bool flag) internal virtual {
-        for (uint256 i = 0; i < hmnBridges.length; i++) {
-            hmnBridges[i].setPioneer(chainId, account, flag);
-        }
+        _announceToBridges(abi.encodeWithSelector(IHmnManagerBridge.setPioneer.selector, chainId, account, flag));
     }
 
     function undoPioneering(BlockChainId chainId, Address32 approver32) public virtual override onlyOwner onlyProxy onlyInitialized {
         super.undoPioneering(chainId, approver32);
-        _announceUndoPioneering(chainId, approver32);
+        _announceToBridges(abi.encodeWithSelector(IHmnManagerBridge.undoPioneering.selector, chainId, approver32));
     }
-
-    function _announceUndoPioneering(BlockChainId chainId, Address32 approver32) internal virtual {
-        for (uint256 i = 0; i < hmnBridges.length; i++) {
-            hmnBridges[i].undoPioneering(chainId, approver32);
-        }
-    }
-
 
     /// @notice Saves a device verification sent by user wallet and signed by trusted server
     function saveSignedDeviceVerification(
@@ -533,9 +512,9 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
             try hmnBridges[i].saveVerification(chainId, account, verificationLevel, timestamp) {
                 // Success
             } catch Error(string memory reason) {
-                emit BridgeError(address(hmnBridges[i]), reason);
-            } catch (bytes memory) {
-                emit BridgeError(address(hmnBridges[i]), "unknown error");
+                emit BridgeVerificationErrorEvent(address(hmnBridges[i]), reason, chainId, account, verificationLevel, timestamp);
+            } catch (bytes memory byteData) {
+                emit BridgeVerificationErrorEvent(address(hmnBridges[i]), Strings.toHexString(uint256(uint160(bytes20(byteData)))), chainId, account, verificationLevel, timestamp);
             }
         }
     }
@@ -543,27 +522,12 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
     function setRequiredVerificationLevelForTransfer(uint256 newLevel) public virtual override onlyOwner onlyProxy onlyInitialized {
         if (newLevel != VerificationLevels.DEVICE && newLevel != onChainVerificationLevel) revert InvalidVerificationLevel(newLevel);
         super.setRequiredVerificationLevelForTransfer(newLevel);
-        _announceSetRequiredVerificationLevelForTransfer(newLevel);
+        _announceToBridges(abi.encodeWithSelector(IHmnManagerBridge.setRequiredVerificationLevelForTransfer.selector, newLevel));
     }
 
-    function _announceSetRequiredVerificationLevelForTransfer(uint256 verificationLevel) internal virtual {
-        for (uint256 i = 0; i < hmnBridges.length; i++) {
-            hmnBridges[i].setRequiredVerificationLevelForTransfer(verificationLevel);
-        }
-    }
-
-    /// @notice Sets the fee percentage for unverified transfers
-    /// @param feePercentage The fee percentage in basis points (0-100)
     function setUnverifiedFee(uint256 feePercentage) public virtual override onlyOwner onlyProxy onlyInitialized {
         super.setUnverifiedFee(feePercentage);
-        _announceSetUnverifiedFee(feePercentage);
-    }
-
-    
-    function _announceSetUnverifiedFee(uint256 feePercentage) internal virtual {
-        for (uint256 i = 0; i < hmnBridges.length; i++) {
-            hmnBridges[i].setUnverifiedFee(feePercentage);
-        }
+        _announceToBridges(abi.encodeWithSelector(IHmnManagerBridge.setUnverifiedFee.selector, feePercentage));
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -614,9 +578,7 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
     }
 
     function _announceRenounceAccount(address fromAddress, uint256 adjustedTimeStampForOldAccount) internal virtual {
-        for (uint256 i = 0; i < hmnBridges.length; i++) {
-            hmnBridges[i].renounceAccount(BLOCKCHAIN_ID, fromAddress.toAddress32(), adjustedTimeStampForOldAccount);
-        }
+        _announceToBridges(abi.encodeWithSelector(IHmnManagerBridge.renounceAccount.selector, BLOCKCHAIN_ID, fromAddress.toAddress32(), adjustedTimeStampForOldAccount));
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -818,7 +780,7 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
             proof
         ) {
             return;
-        } catch (bytes memory lowLevelData) {
+        } catch (bytes memory byteData) {
             // Possible error signatures:
             // 0x00 - Possibly SemaphoreVerifier.verifyProof's 'Check pairing equation' static call revert with no data
             // 0x7fcdd1f4 - ProofInvalid()
@@ -832,7 +794,7 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
             // 0xa0b1d72d - MismatchedInputLengths()
             // 0x8e4a23d6 - Unauthorized(address)
             revert WorldIDVerificationFailed(
-                Strings.toHexString(uint256(uint160(bytes20(lowLevelData)))),
+                Strings.toHexString(uint256(uint160(bytes20(byteData)))),
                 address(worldId),
                 root,
                 level,
@@ -855,7 +817,14 @@ contract HmnManagerImplMainV1 is HmnManagerImplBase, EIP712Upgradeable, IHmnMana
     }
 
     function getHumanHash(address account) public view returns (uint256) {
-      return chainAddressToHumanHash[BLOCKCHAIN_ID][account.toAddress32()];
+        return chainAddressToHumanHash[BLOCKCHAIN_ID][account.toAddress32()];
+    }
+
+    function _announceToBridges(bytes memory callData) internal virtual {
+        for (uint256 i = 0; i < hmnBridges.length; i++) {
+            (bool success,) = address(hmnBridges[i]).call(callData);
+            if (!success) revert BridgeCallFailed(i, address(hmnBridges[i]), callData);
+        }
     }
 
 }
