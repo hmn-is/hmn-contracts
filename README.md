@@ -26,16 +26,25 @@ Delay-upgradeable, HMN Manager and bridge contracts for maintaining an on-chain 
 forge build
 ```
 
-### Local deployment
+### Development
 
+1. Start local node:
 ```shell
 anvil -f https://worldchain-sepolia.g.alchemy.com/v2/your_code --chain-id 4801 --block-time 10
-
-forge script script/Deploy.s.sol --rpc-url http://0.0.0.0:8545 --private-key <your_private_key>
 ```
 
-### Generate ABI files
+2. Set enviromnent variables in .env (see deploy script for expected variables)
 
+3. Deploy contracts to local fork (this also generates abi files):
 ```shell
-pushd src; forge inspect HmnManagerImplMainV1 abi > abi/manager.json; popd
+# 
+./deploy.sh
+```
+
+### Deployment
+
+Ensure correct variables in .env and deploy to production and perform contract verification by running:
+```shell
+# 
+./deploy.sh production
 ```

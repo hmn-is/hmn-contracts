@@ -22,8 +22,11 @@ for var in "${required_vars[@]}"; do
   fi
 done
 
-# OUTPUT=$(forge script script/Deploy.s.sol --rpc-url $ETH_RPC_URL --private-key $PRIVATE_KEY--broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY)
-OUTPUT=$(forge script script/Deploy.s.sol --rpc-url http://0.0.0.0:8545 --private-key $PRIVATE_KEY --broadcast)
+if [ "$1" = "production" ]; then
+  OUTPUT=$(forge script script/Deploy.s.sol --rpc-url $ETH_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY)
+else
+  OUTPUT=$(forge script script/Deploy.s.sol --rpc-url http://0.0.0.0:8545 --private-key $PRIVATE_KEY --broadcast)
+fi
 echo "$OUTPUT"
 NEXT_PUBLIC_MANAGER_CONTRACT_ADDRESS=$(echo "$OUTPUT" | grep "Manager Proxy:" | awk '{print $3}')
 NEXT_PUBLIC_HMN_CONTRACT_ADDRESS=$(echo "$OUTPUT" | grep "HMN Token:" | awk '{print $3}')
