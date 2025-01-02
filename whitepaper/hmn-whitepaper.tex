@@ -6,16 +6,16 @@
 \usepackage{graphicx}
 \usepackage{amsmath,amssymb}
 
-\title{HMN Token Whitepaper}
+\title{HMN Whitepaper}
 \author{\href{https://hmn.is}{hmn.is}}
-\date{\today\hspace{1em}(Draft)}
+\date{\today}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
 \href{https://github.com/hmn-is/hmn-contracts}{HMN contracts} provide a decentralised, human-verified on-chain financial system where each participant can be trusted to be a unique human.
-The HMN token contracts serve as an immutable, trustless cross-chain token that encourages anonymous humanity verification with \href{https://world.org/world-id}{World ID}, resist sybil attacks, and support account recovery.
+The HMN token contracts serve as an immutable, trustless cross-chain token that encourages anonymous humanity verification with \href{https://world.org/world-id}{World ID}, resist Sybil attacks, and support account recovery.
 The non-upgradeable HMN token is supported by management contracts that serve as a delayed-upgradeable human verification registry, achieving a balance between long-term trustlessness and adaptivity.
 \end{abstract}
 
@@ -27,9 +27,9 @@ In this first step, the goal is to ensure that each human has exactly one set of
 
 The \href{https://hmn.is}{hmn.is} ecosystem builds on the \href{https://world.org/world-id}{World ID} system that combines iris and facial recognition with \href{https://en.wikipedia.org/wiki/Zero-knowledge_proof}{zero-knowledge proofs} to anonymously verify the humanness of participants.
 The \href{https://github.com/hmn-is/hmn-contracts}{HMN contracts} provide an on-chain cross-chain registry of verified human accounts.
-This unique-human mapping unlocks a range of possibilities, from recovery of lost accounts, and sybil-resistant reward systems, all the way to universal income funded by bot transfer taxation.
+This unique-human mapping unlocks a range of possibilities, from recovery of lost accounts, and Sybil-resistant reward systems, all the way to universal income funded eg. by bot transfer taxation.
 
-The contracts are divided into two parts: the immutable HMN token contracts are designed for trustlessness and operate largely independently of the manager registry, ensuring guranteed market functionality and safety with minimal attack surfaces.
+The contracts are divided into two parts: the immutable HMN token contracts are designed for trustlessness and operate largely independently of the manager registry, ensuring guaranteed market functionality and safety with minimal attack surfaces.
 The delay-upgradeable manager contracts, on the other hand, are designed for minimised trust while still being flexible and future-proof, allowing new verification schemes and extension to other blockchains.
 
 \section{HMN Token Contracts}
@@ -39,17 +39,16 @@ The HMN \href{https://ethereum.org/en/developers/docs/standards/tokens/erc-20/}{
 The HMN token has a fixed total supply of 8,200,000,000 tokens -- one for every human. The distribution is designed to support network growth and provide fair and wide holder distribution to early adopters:
 
 \begin{itemize}
-    \item \textbf{Rewards - 50\%:} Half of the tokens are allocated for verification reward programs, including 20\% for an initial 2025 rewards program at launch.
-    \item \textbf{Initial Supply - 30\%:} Approximately a third of all tokens will be included in initial supply, with 24\% distributed through a fair, 'bonding-curve' inspired pricing. Liquidity provider tokens are time-locked, allowing fee collection but preventing liquidity removal.
+    \item \textbf{Rewards - 50\%:} Half of the tokens are allocated for verification reward programs, including up to 20\% for an initial 2025 rewards program.
+    \item \textbf{Initial Supply - 30\%:} Approximately a third of all tokens will be included in initial supply, with 24\% distributed through a fair, 'bonding curve' inspired pricing. Liquidity provider tokens are time-locked into a safe contract, allowing fee collection but preventing sudden liquidity removal.
     \item \textbf{Community Growth - 10\%:} Allocated for ecosystem development, including up to 5\% airdrop to active OP Superchain addresses shortly after launch.
     \item \textbf{Team Incentives - 10\%:} Reserved for future team incentive programs with 4-year vesting periods, secured in time-locked contracts until program initiation.
 \end{itemize}
 
-The 'bonding-curve' distribution mechanism aims to create a fair and wide token allocation among early participants.
-The substantial 30\% initial supply ensures adequate market liquidity at launch to avoid spikes and volatility. It also serves as a hefty counterweight for limiting the dilution of the 20\% initial 2025 rewards program and spreading its load across a wide holder base.
+The 'bonding curve' distribution mechanism aims to create a fair and wide token allocation among early participants.
+The substantial 30\% initial supply ensures adequate market liquidity at launch to avoid spikes and volatility. It also serves as a hefty counterweight for limiting the dilution of the initial 2025 rewards program.
 
-In effect, the token distribution creates a system where early adopters and team finance network growth with a controlled, manageable dilution via reward programs.
-The reward programs are carefully designed for significant follower growth, providing 'bang for the buck' for the early adopters.
+In effect, the token distribution creates a system that finances network growth with controlled, manageable dilution via reward programs carefully designed for significant and relevant user and follower growth.
 
 \subsection{Token Features}
 Its core features include:
@@ -64,35 +63,41 @@ Its core features include:
     \item \textbf{Future proofed for human verification:} While disabled at launch, the token has built-in functionality for imposing bot-transfer fees and/or blocking unverified or bot-labeled addresses. Verified human accounts remain unaffected.
     \item \textbf{Shared secondary chain and specialized Mainnet functionality:} 
           \begin{itemize}
-              \item \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnBase.sol}{HmnBase}} implements shared, chain-agnostic transfer control logic.
-              \item \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnMain.sol}{HmnMain}} implements the master Ethereum Mainnet token, providing account recovery and bridging configuration.
+              \item \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnBase.sol}{HmnBase}} implements shared, chain-agnostic transfer verification logic.
+              \item \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnMain.sol}{HmnMain}} implements the master Ethereum Mainnet token, providing account recovery and token bridging configuration.
           \end{itemize}
-    \item \textbf{Trustlessness and independence:} While HMN contracts cooperate with the \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManager.sol}{HmnManager}}, the token contracts retain independence, ensuring guaranteed tradability with permanent whitelists, and maximum fee enforcement, and by providing a future possibility for totally opting out from the manager's verification services by paying a fee.
+    \item \textbf{Trustlessness and independence:} HMN token contracts cooperate with the \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManager.sol}{HmnManager}}, but retain independence by
+          \begin{itemize}
+            \item ensuring guaranteed tradability with permanent whitelists,
+            \item enforcing a maximum unverified account / bot transfer fee of 1\%, and by
+            \item providing a future possibility for totally opting out from the manager's verification services by opting to pay the fee.
+          \end{itemize}
 \end{itemize}
 
-At inception, all transfer controls and taxes are inactive, allowing HMN to function like a standard ERC-20 token, while learning and expanding its network of trusted contracts.
-Over time, upon community-driven decisions, transfer taxes or controls can be activated or tuned to enforce the human verification guarantee and disincentivise bot usage.
+Transfer verification logic is tested at launch and disabled shortly after, allowing HMN to function like a standard ERC-20 token, while learning and expanding its network of trusted contracts.
+Over time, upon community-driven decisions, transfer taxes or controls can be activated and tuned to enforce the human verification guarantee and disincentivise bot usage.
 
 \section{HMN Manager Contracts}
-The \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManager.sol}{HmnManager}}, \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplBase.sol}{HmnManagerImplBase}} and \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplMainV1.sol}{HmnManagerImplMainV1}} contracts orchestrate on-chain human verification, registry management, trusted contract whitelists, and adjustable transfer taxation and restrictions.
+The \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManager.sol}{HmnManager}}, \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplBase.sol}{HmnManagerImplBase}} and \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplMainV1.sol}{HmnManagerImplMainV1}}
+contracts orchestrate on-chain human verification, registry management, trusted contract whitelists, and adjustable transfer taxation and restrictions.
 The upgradeability functionality is delayed by\\\texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/abstract/OwnerUpgradeableImplWithDelay.sol}{OwnerUpgradeableImplWithDelay}}, giving users time to respond to proposed changes.
-The upgrade delay is set to 7 days, and will be increased to 30 days after the contracts are deemed stable, providing users ample time to respond to proposed changes.
+The upgrade delay is initially set to 7 days, and will be increased to 30 days after the contracts are deemed stable, providing users ample time to respond to proposed changes.
 
 \subsection{Features and Capabilities}
 Key aspects include:
 \begin{itemize}
     \item \textbf{Delayed upgradability:} A standard (UUPS, ERC-1967) proxy upgrade pattern with a mandatory delay allows users to exit if malicious upgrades are attempted by compromised governance.
-    \item \textbf{Cross-chain verification registry:} The managers maintain a universal registry of verified human account addresses that is synced across a growing number of bridged chains.
+    \item \textbf{Cross-chain verification registry:} The managers maintain a universal registry of verified human account addresses that are synced across a growing number of bridged chains.
     \item \textbf{Support for diverse chain formats:} With a datamodel supporting multiple chains and longer address formats, the manager can accommodate future blockchains with differing address lengths.
-    \item \textbf{On-chain \href{https://world.org/world-id}{World ID} orb verification:} \href{https://world.org/world-id}{World ID}'s secure and anonymous zero-knowledge proofs prevent sybil attacks and ensures each human can hold only one verified account (or, in the future, a linked set of accounts).
+    \item \textbf{On-chain \href{https://world.org/world-id}{World ID} orb verification:} \href{https://world.org/world-id}{World ID}'s secure and anonymous zero-knowledge proofs prevent Sybil attacks and ensures each human can hold only one verified account (or, in the future, a linked set of accounts).
     \item \textbf{Off-chain device verification:} As an onboarding feature, device-based verification (which is not supported on-chain by World ID) may be signed by a trusted server, enabling user acquisition without World ID Orb verification.
     \item \textbf{Account recovery:} If explicitly configured by the user via the immutable token contract, the manager authenticates secure account recovery after a safety period.
     \item \textbf{Account migration:} Users can migrate their account and HMN funds to a new wallet address.
     \item \textbf{Transfer tax and control modes:} While initially off, transfer tax or restrictions can be activated by the governing community to favor humans and encourage participation by imposing up to 1\% tax on unverified transfers, or by limiting transactions completely to verified humans and trusted contracts.
-    \item \textbf{Network expansion with trusted pioneers:} A pioneering mode empowers a core set of trusted pioneer users to dynamically grow the network's registry of trusted contracts, while the manager track their work and allows for error correction.
+    \item \textbf{Network expansion with trusted pioneers:} A pioneering mode empowers a core set of trusted pioneer users to dynamically grow the network's registry of trusted contracts, while the manager tracks their work and allows for error correction.
     \item \textbf{Shared secondary chain and specialized Mainnet functionality:}
           \begin{itemize}
-              \item \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplBase.sol}{HmnManagerImplBase}} implements generic, chain-agnostic registry and transfer control logic.
+              \item \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplBase.sol}{HmnManagerImplBase}} implements generic, chain-agnostic registry and transfer verification logic.
               \item \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplMainV1.sol}{HmnManagerImplMainV1}} provides human verification, registry management, account migration \& recovery, and verification state broadcasting to other chains.
           \end{itemize}
 \end{itemize}
@@ -110,6 +115,5 @@ By combining standard ERC-20 functionality, on-chain verification via \href{http
 
 The system's architecture, featuring non-upgradeable token contracts coupled with delayed-upgradeable managers, strikes a balance between trustless robustness and flexibility.
 As adoption grows, HMN's approach to verification-based trust and resource management has the potential to reduce fraud, improve fairness, and eventually provide a foundation for a more equitable global economic system.
-
 
 \end{document}
