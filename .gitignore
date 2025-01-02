@@ -7,4 +7,5 @@ remappings.txt
 broadcast/
 /lib/*
 bin/src/*
+script/Configure.s.sol
 .cursorrules
