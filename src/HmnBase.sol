@@ -5,7 +5,6 @@ import "./utils/Ownable2Step.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC1363.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import './interfaces/IHmnManagerBase.sol';
@@ -15,19 +14,19 @@ import './interfaces/IHmnManagerBase.sol';
 /// @dev Implements ERC20, ERC1363 (transferAndCall), and ERC20Permit (gasless approvals)
 abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
 
-    /// @notice Reference to the transfer control contract that enforces human-only transfers
+    /// @notice Reference to the manager contract that enforces human-only transfers
     /// @dev Made immutable to reduce gas costs and prevent modification after deployment
     IHmnManagerBase internal immutable hmnManager;
 
     /// @notice Maximum fee that can be charged (100 basis points = 1%)
     uint256 public constant MAX_FEE_BPS = 100;
 
-    /// @notice Bot fee percentage (1-100) for "confessed bot" accounts, 0 means feature is disabled
+    /// @notice Bot fee percentage (1-100 basis points, or <=1%) for "confessed bot" accounts, 0 means feature is disabled
     uint256 public botFeeBps;
 
     /// @notice Tracks whether an address has explicitly opted-in to account recovery.
     /// @dev This serves to guarantee an unchangeable ability to opt-out in the future,
-    ///      while the upgradable registry transfer control contract contains most of
+    ///      while the upgradable manager contract contains most of
     ///      the data needed for recovery. 
     mapping(address => bool) public addressRecoveryEnabled;
 

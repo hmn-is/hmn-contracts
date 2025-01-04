@@ -78,7 +78,7 @@ Transfer verification logic is tested at launch and disabled shortly after, allo
 Over time, upon community-driven decisions, transfer taxes or controls can be activated and tuned to enforce the human verification guarantee and disincentivise bot usage.
 
 \section{HMN Manager Contracts}
-The \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManager.sol}{HmnManager}}, \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplBase.sol}{HmnManagerImplBase}} and \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplMainV1.sol}{HmnManagerImplMainV1}}
+The \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManager.sol}{HmnManager}}, \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplBase.sol}{HmnManagerImplBase}} and \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplMainLogicV1.sol}{HmnManagerImplMainLogicV1}}
 contracts orchestrate on-chain human verification, registry management, trusted contract whitelists, and adjustable transfer taxation and restrictions.
 The upgradeability functionality is delayed by\\\texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/abstract/OwnerUpgradeableImplWithDelay.sol}{OwnerUpgradeableImplWithDelay}}, giving users time to respond to proposed changes.
 The upgrade delay is initially set to 7 days, and will be increased to 30 days after the contracts are deemed stable, providing users ample time to respond to proposed changes.
@@ -98,7 +98,7 @@ Key aspects include:
     \item \textbf{Shared secondary chain and specialized Mainnet functionality:}
           \begin{itemize}
               \item \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplBase.sol}{HmnManagerImplBase}} implements generic, chain-agnostic registry and transfer verification logic.
-              \item \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplMainV1.sol}{HmnManagerImplMainV1}} provides human verification, registry management, account migration \& recovery, and verification state broadcasting to other chains.
+              \item \texttt{\href{https://github.com/hmn-is/hmn-contracts/blob/main/src/HmnManagerImplMainLogicV1.sol}{HmnManagerImplMainLogicV1}} provides human verification, registry management, account migration \& recovery, and verification state broadcasting to other chains.
           \end{itemize}
 \end{itemize}
 

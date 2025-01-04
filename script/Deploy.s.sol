@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import "forge-std/Script.sol";
 import "../src/HmnManager.sol";
-import "../src/HmnManagerImplMainV1.sol";
+import "../src/HmnManagerImplMainLogicV1.sol";
 import "../src/HmnMain.sol";
 import "../src/interfaces/IWorldID.sol";
 import "../src/HmnSafe.sol";
@@ -62,7 +62,7 @@ contract Deploy is Script {
             MANAGER_UPGRADE_DELAY
         );
 
-        HmnManagerImplMainV1 impl = new HmnManagerImplMainV1();
+        HmnManagerImplMainLogicV1 impl = new HmnManagerImplMainLogicV1();
 
         // Deploy proxy with implementation and initialization
         HmnManager manager = new HmnManager(address(impl), initializeCall);
@@ -77,8 +77,8 @@ contract Deploy is Script {
         );
 
         console.log("HMN Token:", address(hmn));
-        HmnManagerImplMainV1(address(manager)).setHmnAddress(address(hmn));
-        HmnManagerImplMainV1(address(manager)).setUnverifiedFee(101);
+        HmnManagerImplMainLogicV1(address(manager)).setHmnAddress(address(hmn));
+        HmnManagerImplMainLogicV1(address(manager)).setUnverifiedFee(101);
 
         // Deploy HmnSafe implementations
         HmnSafeImplV1 safeImpl = new HmnSafeImplV1();
@@ -121,13 +121,13 @@ contract Deploy is Script {
         console.log("Liquidity Safe Proxy:", address(liquiditySafe));
 
         // Whitelist the safe contracts
-        HmnManagerImplMainV1(address(manager)).adjustContractWhitelist(address(rewardSafe), deployer);
+        HmnManagerImplMainLogicV1(address(manager)).adjustContractWhitelist(address(rewardSafe), deployer);
         console.log("Whitelisted Reward Safe");
-        HmnManagerImplMainV1(address(manager)).adjustContractWhitelist(address(communitySafe), deployer);
+        HmnManagerImplMainLogicV1(address(manager)).adjustContractWhitelist(address(communitySafe), deployer);
         console.log("Whitelisted Community Safe");
-        HmnManagerImplMainV1(address(manager)).adjustContractWhitelist(address(teamSafe), deployer);
+        HmnManagerImplMainLogicV1(address(manager)).adjustContractWhitelist(address(teamSafe), deployer);
         console.log("Whitelisted Team Safe");
-        HmnManagerImplMainV1(address(manager)).adjustContractWhitelist(address(liquiditySafe), deployer);
+        HmnManagerImplMainLogicV1(address(manager)).adjustContractWhitelist(address(liquiditySafe), deployer);
         console.log("Whitelisted Liquidity Safe");
 
         // Get deployer's token balance

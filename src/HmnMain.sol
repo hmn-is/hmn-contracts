@@ -21,7 +21,7 @@ contract HmnMain is HmnBase, ReentrancyGuard, ICustomArbitrumToken {
 
     /// @notice Emitted when recovery is successfully disabled for an account
     event RecoveryIsDisabled();
-    /// @notice Emitted when recovery disabling succeeds even if registry call fails
+    /// @notice Emitted when recovery disabling succeeds even if manager call fails
     event RecoveryForceDisabled();
 
     /// @notice Emitted when recovery is enabled for an account
@@ -37,10 +37,10 @@ contract HmnMain is HmnBase, ReentrancyGuard, ICustomArbitrumToken {
     IL2GatewayRouter private arbitrumRouterAddress;
 
     /// @notice Initializes the HMN token with transfer controls and Arbitrum bridge support
-    /// @param _hmnTransferControl Address of the transfer control registry
+    /// @param _hmnManager Address of the transfer verification manager
     /// @param _arbitrumGatewayAddress Address of Arbitrum's custom gateway
     /// @param _arbitrumRouterAddress Address of Arbitrum's L2 gateway router
-    constructor(IHmnManagerMain _hmnTransferControl, IL1CustomGateway _arbitrumGatewayAddress, IL2GatewayRouter _arbitrumRouterAddress) HmnBase(_hmnTransferControl) ReentrancyGuard() {
+    constructor(IHmnManagerMain _hmnManager, IL1CustomGateway _arbitrumGatewayAddress, IL2GatewayRouter _arbitrumRouterAddress) HmnBase(_hmnManager) ReentrancyGuard() {
         arbitrumGatewayAddress = _arbitrumGatewayAddress;
         arbitrumRouterAddress = _arbitrumRouterAddress;
         _mint(_msgSender(), 8200000000 * 10**decimals());

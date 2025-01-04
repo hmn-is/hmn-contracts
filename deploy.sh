@@ -32,7 +32,7 @@ NEXT_PUBLIC_MANAGER_CONTRACT_ADDRESS=$(echo "$OUTPUT" | grep "Manager Proxy:" | 
 NEXT_PUBLIC_HMN_CONTRACT_ADDRESS=$(echo "$OUTPUT" | grep "HMN Token:" | awk '{print $3}')
 
 pushd src;
-forge inspect HmnManagerImplMainV1 abi > abi/manager.json;
+forge inspect HmnManagerImplMainLogicV1 abi > abi/manager.json;
 forge inspect HmnMain abi > abi/hmn.json;
 cp abi/manager.json ../../hmn-is/src/abi/manager.json;
 cp abi/hmn.json ../../hmn-is/src/abi/hmn.json;
