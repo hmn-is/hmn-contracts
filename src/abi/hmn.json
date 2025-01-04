@@ -3,7 +3,7 @@
     "type": "constructor",
     "inputs": [
       {
-        "name": "_hmnTransferControl",
+        "name": "_hmnManager",
         "type": "address",
         "internalType": "contract IHmnManagerMain"
       },

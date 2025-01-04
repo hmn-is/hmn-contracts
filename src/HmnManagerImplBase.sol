@@ -121,7 +121,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     /// @notice Thrown when a transfer involves an unverified contract
     /// @param account The address of the unverified contract
     /// @param hint A message providing guidance on how to resolve the issue
-    error UnverifiededContract(address account, string hint);
+    error UnverifiedContract(address account, string hint);
 	  
     /// @notice Thrown when sender's verification level is below required threshold
     /// @param account The address with insufficient verification
@@ -131,7 +131,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     /// @notice Thrown when recipient's verification level is below required threshold
     /// @param account The address with insufficient verification
     /// @param hint A message providing guidance on how to resolve the issue
-    error DestinationVerificationLevelInsufficient(address account, string hint);
+    error RecipientVerificationLevelInsufficient(address account, string hint);
 
     /// @notice Thrown when sender's verification has expired
     /// @param account The address with expired verification
@@ -141,7 +141,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     /// @notice Thrown when recipient's verification has expired
     /// @param account The address with expired verification
     /// @param hint A message providing guidance on how to resolve the issue
-    error DestinationVerificationExpired(address account, string hint);
+    error RecipientVerificationExpired(address account, string hint);
 
     /// @notice Thrown when an unverified address attempts to send tokens
     /// @param account The unverified sender address
@@ -151,7 +151,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     /// @notice Thrown when attempting to send tokens to an unverified address
     /// @param account The unverified recipient address
     /// @param hint A message providing guidance on how to resolve the issue
-    error UnverifiedDestination(address account, string hint);
+    error UnverifiedRecipient(address account, string hint);
 
     /// @notice Thrown when a blacklisted bot attempts to transfer tokens
     /// @param account The blacklisted address
@@ -520,14 +520,13 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
             if (fromOk && toOk) return 0;
         }
 
-        // 6. Revert if unverified fee is set to a value higher than allowed
+        // 6. All checks failed, higher than allowed unverified fee is used to configure revert on verification failure
         if (unverifiedFee > MAX_FEE_BPS) {
-          revertIfReason(from, true);
-          revertIfReason(to, false);
+          revertWithReason(from, to, !fromOk);
         }
+
         // Return configured fee for unverified transfer
         return unverifiedFee;
-        
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -548,35 +547,36 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
 
     /// @notice Provides detailed error messages for failed transfer authorization
     /// @dev Checks verification status and provides context-specific error messages
-    /// @param account The address to check
-    function revertIfReason(address account, bool isFrom) internal virtual view {
-        uint256 timestamp = getVerificationTimestamp(account);
-        if (timestamp == 0 && isContract(account)) revert UnverifiededContract(account, getContractHint(account));
-        
-        bool isUnverified = timestamp == 0 && !isContract(account);
-        if (isUnverified && isFrom) revert UnverifiedDestination(account, getAccountHint(account));
-        if (isUnverified && !isFrom) revert UnverifiedSender(account, getAccountHint(account));
-        
+    /// @param sender The from address of the failed transfer
+    /// @param recipient The to address of the failed transfer
+    /// @param senderFailed True if the from address failed verification checks
+    function revertWithReason(address sender, address recipient, bool senderFailed) internal virtual view {
+        address account = senderFailed ? sender : recipient;
         Verification memory verification = getVerification(account);
-        uint256 timeout = timeouts[verification.level]; // Note: defaults to Device timeout of unverified accounts
-        bool isExpired = verification.timestamp != 0 && timeout != 0 && verification.timestamp + timeout <= block.timestamp;
-        if (isExpired && isFrom) revert DestinationVerificationExpired(account, getAccountHint(account));
-        if (isExpired && !isFrom) revert SenderVerificationExpired(account, getAccountHint(account));
+        if (verification.timestamp == 0 && isContract(account)) revert UnverifiedContract(account, getContractHint(account));
+        
+        bool isUnverified = verification.timestamp == 0 && !isContract(account);
+        if (isUnverified && senderFailed) revert UnverifiedSender(account, getAccountHint(account));
+        if (isUnverified && !senderFailed) revert UnverifiedRecipient(account, getAccountHint(account));
+        
+        uint256 timeout = timeouts[verification.level]; // Note: defaults to Device timeout for unverified accounts
+        bool isExpired = timeout != 0 && verification.timestamp + timeout <= block.timestamp;
+        if (isExpired && senderFailed) revert SenderVerificationExpired(account, getAccountHint(account));
+        if (isExpired && !senderFailed) revert RecipientVerificationExpired(account, getAccountHint(account));
 
-        bool isInsufficient = isInsufficientVerificationForTransfer(account);
-        if (isInsufficient && isFrom) revert DestinationVerificationLevelInsufficient(account, getAccountHint(account));
-        if (isInsufficient && !isFrom) revert SenderVerificationLevelInsufficient(account, getAccountHint(account));
+        if (senderFailed) revert SenderVerificationLevelInsufficient(account, getAccountHint(account));
+        else revert RecipientVerificationLevelInsufficient(account, getAccountHint(account));
     }
 
     function getContractHint(address addr) internal virtual view returns (string memory) {
-      return string(abi.encodePacked("Contract not trusted, please request trust at https://hmn.is/whitelist/", tx.origin.toString(), "/", addr.toString()));
+      return string(abi.encodePacked("Please request verification at https://hmn.is/whitelist?contract=", addr.toString(), "&w=", tx.origin.toString()));
     }
 
     function getAccountHint(address account) internal virtual view returns (string memory) {
       if (account == tx.origin) {
-        return string(abi.encodePacked("Please visit https://hmn.is/verify/", account.toString()));
+        return string(abi.encodePacked("Please visit https://hmn.is/verify?w=", account.toString()));
       } else {
-        return string(abi.encodePacked("Please ask them to visit https://hmn.is/verify/", account.toString()));
+        return string(abi.encodePacked("Please ask them to visit https://hmn.is/verify?w=", account.toString()));
       }
     }
 
@@ -590,11 +590,6 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
 
     function isNullVerification(Verification memory verification) internal virtual pure returns (bool) {
       return verification.timestamp == 0;
-    }
-
-    function isInsufficientVerificationForTransfer(address account) internal virtual view returns (bool) {
-      Verification memory verification = getVerification(account);
-      return verification.timestamp != 0 && verification.level < requiredVerificationLevelForTransfer;
     }
 
     function isVerifiedForTransfer(address account) internal virtual view returns (bool) {

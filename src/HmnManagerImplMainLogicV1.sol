@@ -469,7 +469,7 @@ contract HmnManagerImplMainLogicV1 is EIP712Upgradeable, HmnManagerImplBase, Hmn
     }
 
     ///////////////////////////////////////////////////////////////////////////////
-    ///                            MOVE ACCOUNT FEATURE                         ///
+    ///                         RENOUNCE ACCOUNT FEATURE                        ///
     ///////////////////////////////////////////////////////////////////////////////
 
     /// @notice Renounce an old lost wallet after verifying user identity, enabling the user to verify a new wallet

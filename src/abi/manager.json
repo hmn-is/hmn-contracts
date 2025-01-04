@@ -2589,7 +2589,7 @@
   },
   {
     "type": "error",
-    "name": "UnverifiededContract",
+    "name": "UnverifiedContract",
     "inputs": [
       {
         "name": "account",
