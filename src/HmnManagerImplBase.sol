@@ -12,7 +12,8 @@ import './utils/LibsAndTypes.sol';
 /// @title HMN Transfer Control Base Implementation
 /// @notice Manages human verification and transfer controls for the HMN token across chains
 /// @dev Base implementation for L1/L2 specific contracts. Must be used behind an upgradeable proxy.
-///      All storage variables are defined here to prevent storage collisions during upgrades.
+///      - All generic, chain agnostic storage and logic are defined in this contract
+///      - All chain specific storage and logic are defined in separate chain specific contracts
 abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManagerBase {
     using MultiChainAddress for address;
     using MultiChainAddress for Address32;
@@ -25,16 +26,13 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     // there are a few important implementation considerations:
     //
     // - All updates made after deploying a given version of the implementation should inherit from
-    //   the latest version of the implementation. This prevents storage clashes.
+    //   the latest version of the storage implementation. This prevents storage clashes.
     // - All functions that are less access-restricted than `private` should be marked `virtual` in
     //   order to enable the fixing of bugs in the existing interface.
-    // - Any function that reads from or modifies state (i.e. is not marked `pure`) must be
+    // - Any external function that reads from or modifies state (i.e. is not marked `pure`) must be
     //   annotated with the `onlyProxy` and `onlyInitialized` modifiers. This ensures that it can
     //   only be called when it has access to the data in the proxy, otherwise results are likely to
     //   be nonsensical.
-    // - This contract deals with important data for the human verification registry system. Ensure that all newly-added
-    //   functionality is carefully access controlled using `onlyOwner`, or a more granular access
-    //   mechanism.
     // - Do not assign any contract-level variables at the definition site unless they are
     //   `constant`.
     //
@@ -297,6 +295,11 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
         _;
     }
 
+    modifier onlyToken() {
+        if (_msgSender() != HMN) revert Unauthorised(_msgSender());
+        _;
+    }
+
     ///////////////////////////////////////////////////////////////////////////////
     ///                             INITIALIZATION                              ///
     ///////////////////////////////////////////////////////////////////////////////
@@ -322,7 +325,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
 
     /// @notice Sets the HMN token address
     /// @dev Can only be set once
-    function setHmnAddress(address _hmn) external onlyOwner onlyProxy onlyInitialized {
+    function setHmnAddress(address _hmn) external virtual onlyOwner onlyProxy onlyInitialized {
         if (_hmn == address(0)) revert InvalidAddress(_hmn);
         if (HMN != address(0)) revert HmnTokenAddressAlreadySet();
         HMN = _hmn;
@@ -400,9 +403,12 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     /// @notice Whitelist (or delist) a utility contract (eg. a defi router or pool) manually,
     ///         or based on pioneer transactions.
     /// @dev    This function is allowed for owner and to pioneer _originated_ token transactions.
+    /// @dev    The use of tx.origin is reviewed, and the risk is deemed acceptable,
+    ///         as pioneering is limited to a small set of professional users 
+    //          and the risk is contained to creation of malicious whitelist entries that can be reverted.
     /// @param contractAddr The contract address to add
     /// @param approverOrZero The address that approves the contract
-    function _adjustContractWhitelist(address contractAddr, address approverOrZero) internal virtual onlyProxy onlyInitialized {
+    function _adjustContractWhitelist(address contractAddr, address approverOrZero) internal virtual {
         if (!isContract(contractAddr)) revert NotAContract(contractAddr);
         Address32 approver32 = approverOrZero.toAddress32();
         if (_msgSender() == owner() && approverOrZero == owner() && contractWhitelist[contractAddr].isZero()) {
@@ -421,7 +427,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
         }
     }
 
-    function _removeContractFromWhitelist(address contractAddr) internal virtual onlyProxy onlyInitialized {
+    function _removeContractFromWhitelist(address contractAddr) internal virtual {
         Address32 approver32 = contractWhitelist[contractAddr];
         address[] memory contracts = whitelistedContractsByApprover[approver32];
         for (uint256 i = 0; i < contracts.length; i++) {
@@ -482,7 +488,9 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
     ///      6. Finally, if all checks fail, either revert with a detailed error or return an unverified fee.
     /// @param from Source address of the transfer
     /// @param to Destination address of the transfer
-    function verifyTransfer(address from, address to) public virtual onlyProxy onlyInitialized returns (uint256) {
+    /// @param value Amount of tokens to transfer
+    /// @param _transferSender Address of the sender of the transfer (for future use only)
+    function verifyTransfer(address from, address to, uint256 value, address _transferSender) public virtual onlyProxy onlyInitialized onlyToken returns (uint256) {
         // 1. Allow all transfers if protection is disabled
         if (transferProtectionMode == TransferProtectionModes.ALLOW_ALL) return 0;
 
@@ -504,8 +512,9 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
         if (fromOk && toOk) return 0;
         if (fromToWhitelist[from] == ANYWHERE || fromToWhitelist[from] == to) return 0;
 
-        // 5. In pioneering mode, allow trusted users to whitelist contracts during their transactions
-        if (transferProtectionMode == TransferProtectionModes.VERIFY_WITH_PIONEERING && isPioneer(tx.origin)) {
+        // 5. In pioneering mode, allow trusted users to whitelist contracts with their transactions
+        if (transferProtectionMode == TransferProtectionModes.VERIFY_WITH_PIONEERING && isPioneer(tx.origin) && value > 0) {
+            // Require access to funds for whitelisting to prevent zero value transferFrom tx.origin exploits.
             if (!fromOk && isContract(from)) {
                 _adjustContractWhitelist(from, tx.origin);
                 fromOk = true;
@@ -609,7 +618,7 @@ abstract contract HmnManagerImplBase is OwnerUpgradeableImplWithDelay, IHmnManag
         return hasVerification && timeoutOk && verification.level >= requiredLevel;
     }
 
-    function isPioneer(address account) public view onlyProxy onlyInitialized returns (bool) {
+    function isPioneer(address account) internal virtual view returns (bool) {
         return isVerified(account, requiredVerificationLevelForTransfer) && pioneerAccounts[BLOCKCHAIN_ID][account.toAddress32()];
     }
 

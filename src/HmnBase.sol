@@ -66,7 +66,6 @@ abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
     constructor(IHmnManagerBase _hmnManager) ERC20("Human", "HMN") ERC20Permit("Human") Ownable2Step(_msgSender()) {
         hmnManager = _hmnManager;
         permanentWhitelist[address(0)] = true; // allow burns
-        permanentWhitelist[_msgSender()] = true; // allow mint
     }
     
     /// @notice Enable bot account mode for the caller
@@ -88,7 +87,7 @@ abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
 
     /// @notice Permanently whitelist a critical utility contract such as a defi router or pool for guaranteed tradability
     /// @param account The contract address to whitelist
-    function addToPermanentWhitelist(address account) virtual external onlyOwner {
+    function addToPermanentWhitelist(address account) external virtual onlyOwner {
         permanentWhitelist[account] = true;
         emit ContractAddedToPermanentWhitelist(account);
     }
@@ -98,7 +97,7 @@ abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
     /// @param value The amount being transferred
     /// @param feeBps The fee in basis points (0-100)
     /// @return The calculated fee amount
-    function calculateFee(uint256 value, uint256 feeBps) internal pure returns (uint256) {
+    function calculateFee(uint256 value, uint256 feeBps) internal virtual pure returns (uint256) {
         if (value == 0 || feeBps == 0) return 0;
         uint256 cappedFeeBps = feeBps > MAX_FEE_BPS ? MAX_FEE_BPS : feeBps;
         uint256 fee = value * cappedFeeBps / 10000;
@@ -107,6 +106,9 @@ abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
 
     /// @notice Override of the internal transfer logic from ERC20 to enforce human-only transfers
     /// @dev Called for all transfer operations (transfer, transferFrom, mint, burn)
+    /// @dev Note: To save gas, reentrancy guard is intentionally not used.
+    ///      A compromised manager could only re-enter to transfer its own funds.
+    //       It could not compromise the ledger as it could not re-enter super._update from within super._update.
     /// @param from Source address (zero for mints)
     /// @param to Destination address (zero for burns)
     /// @param value Amount of tokens to transfer
@@ -128,7 +130,7 @@ abstract contract HmnBase is ERC20, ERC1363, ERC20Permit, Ownable2Step {
             return;
         }
 
-        uint256 unverifiedFee = hmnManager.verifyTransfer(from, to);
+        uint256 unverifiedFee = hmnManager.verifyTransfer(from, to, value, _msgSender());
         uint256 fee = calculateFee(value, unverifiedFee);
         if (fee == 0) {
             super._update(from, to, value);

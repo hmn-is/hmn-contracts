@@ -17,7 +17,6 @@ import {ByteHasher, MultiChainAddress, Address32, BlockChainId, Verification, St
 /// @notice A registry that manages human verification and account recovery on Ethereum Mainnet
 /// @dev Implementation contract designed to operate behind a proxy. Key considerations:
 /// - All updates must inherit from latest storage implementation to prevent storage clashes 
-/// - External functions must use onlyProxy and onlyInitialized modifiers
 /// - Carefully control access using onlyOwner or more granular mechanisms
 /// - Only use constant contract-level variables
 contract HmnManagerImplMainLogicV1 is EIP712Upgradeable, HmnManagerImplBase, HmnManagerImplMainStorageV1, IHmnManagerMain {
@@ -33,18 +32,13 @@ contract HmnManagerImplMainLogicV1 is EIP712Upgradeable, HmnManagerImplBase, Hmn
     // there are a few important implementation considerations:
     //
     // - All updates made after deploying a given version of the implementation should inherit from
-    //   the latest version of the implementation. This prevents storage clashes.
+    //   the latest version of the storage implementation. This prevents storage clashes.
     // - All functions that are less access-restricted than `private` should be marked `virtual` in
     //   order to enable the fixing of bugs in the existing interface.
-    // - Any function that reads from or modifies state (i.e. is not marked `pure`) must be
+    // - Any external function that reads from or modifies state (i.e. is not marked `pure`) must be
     //   annotated with the `onlyProxy` and `onlyInitialized` modifiers. This ensures that it can
     //   only be called when it has access to the data in the proxy, otherwise results are likely to
     //   be nonsensical.
-    // - This contract deals with important data for the human verification registry system. Ensure that all newly-added
-    //   functionality is carefully access controlled using `onlyOwner`, or a more granular access
-    //   mechanism.
-    // - Do not assign any contract-level variables at the definition site unless they are
-    //   `constant`.
     //
     // Additionally, the following notes apply:
     //
@@ -538,8 +532,7 @@ contract HmnManagerImplMainLogicV1 is EIP712Upgradeable, HmnManagerImplBase, Hmn
         address authorizedRecoveryAddress, 
         uint256 authorizedRecoveryNullifier,
         uint256 recoverySafetyPeriod
-    ) public virtual onlyProxy onlyInitialized {
-        if (_msgSender() != HMN) revert Unauthorised(_msgSender());
+    ) external virtual onlyProxy onlyInitialized onlyToken {
         if (minRecoverySafetyPeriod == 0) revert RecoveryDisabled();
         if (authorizedRecoveryAddress == address(0) && authorizedRecoveryNullifier == 0 && recoverySafetyPeriod != 0) revert InvalidRecoveryConfiguration();
         if (recoverySafetyPeriod != 0 && recoverySafetyPeriod < minRecoverySafetyPeriod) revert InvalidTimeout(recoverySafetyPeriod);
@@ -592,8 +585,7 @@ contract HmnManagerImplMainLogicV1 is EIP712Upgradeable, HmnManagerImplBase, Hmn
         uint256 root,
         uint256 humanHash,
         uint256[8] calldata proof
-    ) external virtual onlyProxy onlyInitialized {
-        if (_msgSender() != HMN) revert Unauthorised(_msgSender());
+    ) external virtual onlyProxy onlyInitialized onlyToken {
         _authenticateRecoveryRequest(recoverer, addressToRecover, root, humanHash, proof);
         if (recoveryRequestedTimestamp[addressToRecover] == 0) revert RecoveryNotRequested();
         if (block.timestamp < recoveryRequestedTimestamp[addressToRecover] + addressRecoveryTimeout[addressToRecover]) revert RecoveryNotReady();
@@ -656,9 +648,9 @@ contract HmnManagerImplMainLogicV1 is EIP712Upgradeable, HmnManagerImplBase, Hmn
     /// @dev For convenience, cancel recovery request for tx.origin, since it has to be in possession of its private keys to send this transaction
     /// @dev Note that this automatic cancellation does not trigger for contract wallets interacted with via meta-transactions.
     ///      For contract wallets, recovery must be denied manually, or through verification.
-    function verifyTransfer(address from, address to) public virtual override (HmnManagerImplBase, IHmnManagerBase) onlyProxy onlyInitialized returns (uint256) {
-        if (_msgSender() == HMN) _denyRecoveryRequest(tx.origin);
-        return super.verifyTransfer(from, to);
+    function verifyTransfer(address from, address to, uint256 value, address transferSender) public virtual override (HmnManagerImplBase, IHmnManagerBase) returns (uint256) {
+        _denyRecoveryRequest(tx.origin);
+        return super.verifyTransfer(from, to, value, transferSender);
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -748,13 +740,13 @@ contract HmnManagerImplMainLogicV1 is EIP712Upgradeable, HmnManagerImplBase, Hmn
     ///                                     UTILS                               ///
     ///////////////////////////////////////////////////////////////////////////////
 
-    function getAddress(uint256 humanHash) public view returns (address) {
+    function getAddress(uint256 humanHash) public view virtual onlyProxy onlyInitialized returns (address) {
         Address32[] storage addresses = humanHashToChainAddresses[humanHash][BLOCKCHAIN_ID];
         if (addresses.length > 0) return addresses[0].toAddress();
         return address(0);
     }
 
-    function getHumanHash(address account) public view returns (uint256) {
+    function getHumanHash(address account) public view virtual onlyProxy onlyInitialized returns (uint256) {
         return chainAddressToHumanHash[BLOCKCHAIN_ID][account.toAddress32()];
     }
 

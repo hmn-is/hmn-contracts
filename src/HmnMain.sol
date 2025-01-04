@@ -43,6 +43,8 @@ contract HmnMain is HmnBase, ReentrancyGuard, ICustomArbitrumToken {
     constructor(IHmnManagerMain _hmnManager, IL1CustomGateway _arbitrumGatewayAddress, IL2GatewayRouter _arbitrumRouterAddress) HmnBase(_hmnManager) ReentrancyGuard() {
         arbitrumGatewayAddress = _arbitrumGatewayAddress;
         arbitrumRouterAddress = _arbitrumRouterAddress;
+        
+        permanentWhitelist[_msgSender()] = true;  // Allow mint
         _mint(_msgSender(), 8200000000 * 10**decimals());
     }
 
@@ -87,13 +89,13 @@ contract HmnMain is HmnBase, ReentrancyGuard, ICustomArbitrumToken {
 
     /// @notice Cancels or denies an ongoing recovery request for the caller's account
     /// @dev This is a conveniense function so that the user can interact directly with the coin,
-    ///      and does not have to know about the registry.
+    ///      and does not have to know about the manager.
     /// @return success True if there was a request to deny
     function denyRecoveryRequest() external virtual returns (bool) {
         return _getManager().denyRecoveryRequestFor(_msgSender());
     }
 
-    /// @dev Returns the main (master) account and traffic control manager registry contract with its full interface
+    /// @dev Returns the main (master) account and verification manager contract with its full interface
     function _getManager() internal view virtual returns (IHmnManagerMain) {
         return IHmnManagerMain(address(hmnManager));
     }
