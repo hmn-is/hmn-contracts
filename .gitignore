@@ -9,3 +9,4 @@ broadcast/
 bin/src/*
 script/Configure.s.sol
 .cursorrules
+sims/*
